@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Strive AI – Your Fantasy Learning Adventure</title>
+  <meta name="description" content="Strive AI - A gamified AI study assistant designed as a medieval fantasy RPG adventure. Level up your knowledge through magical quests and challenges." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700;900&family=MedievalSharp&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Particle canvas overlay -->
+    <canvas id="particles-canvas"></canvas>
+    
+    <!-- Page transition overlay -->
+    <div id="page-transition" class="page-transition">
+      <div class="transition-runes">
+        <div class="rune r1">✦</div>
+        <div class="rune r2">⟡</div>
+        <div class="rune r3">✧</div>
+        <div class="rune r4">◇</div>
+        <div class="rune r5">⬡</div>
+      </div>
+      <div class="transition-slash"></div>
+    </div>
+
+    <!-- Main content container -->
+    <div id="page-container"></div>
+  </div>
+
+  <!-- SVG Filters for cinematic effects -->
+  <svg style="visibility: hidden; position: absolute;" width="0" height="0" xmlns="http://www.w3.org/2000/svg" version="1.1">
+    <defs>
+      <filter id="displacementFilter">
+        <feTurbulence type="fractalNoise" baseFrequency="0.01" numOctaves="3" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
+      </filter>
+    </defs>
+  </svg>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
