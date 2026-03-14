@@ -146,8 +146,11 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
   flex-direction: column;
   overflow: hidden;
 }
-.login-card-front { position: relative; }
-.login-card-back { transform: rotateY(180deg); }
+.login-card-front { position: absolute; z-index: 2; }
+.login-card-back { transform: rotateY(180deg); z-index: 1; }
+
+.login-card-flipper.flipped .login-card-front { z-index: 1; }
+.login-card-flipper.flipped .login-card-back { z-index: 2; }
 
 /* Ornate Border Rune Strip */
 .login-ornate-border {
@@ -222,7 +225,8 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
   gap: 16px;
   padding: 0 36px;
   position: relative;
-  z-index: 1;
+  z-index: 5;
+  pointer-events: auto;
 }
 .form-group { display: flex; flex-direction: column; gap: 6px; }
 .form-group label {
@@ -268,6 +272,7 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
   font-family: var(--font-body);
   font-size: 0.95rem;
   outline: none;
+  cursor: text;
 }
 .form-group input::placeholder {
   color: rgba(168,152,128,0.35);
@@ -311,13 +316,36 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 }
 .btn-icon { font-size: 1.2rem; }
 
-/* "or create" text */
+
 .login-or-text {
   text-align: center;
-  font-size: 0.8rem;
-  color: rgba(201,164,76,0.35);
-  font-family: var(--font-body);
-  margin-top: 4px;
+  font-family: var(--font-medieval);
+  font-size: 0.75rem;
+  color: rgba(201,164,76,0.4);
+  margin: 4px 0;
+  letter-spacing: 1px;
+}
+
+.guest-btn {
+  width: 100%;
+  padding: 12px;
+  background: transparent;
+  border: 1px dashed rgba(201,164,76,0.3);
+  border-radius: 8px;
+  color: rgba(201,164,76,0.6);
+  font-family: var(--font-heading);
+  font-size: 0.75rem;
+  letter-spacing: 3px;
+  cursor: pointer;
+  transition: all 0.3s var(--ease-bounce);
+  text-transform: uppercase;
+}
+
+.guest-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(201,164,76,0.05);
+  transform: scale(1.02);
 }
 
 /* Bottom Action Bar */

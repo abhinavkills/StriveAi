@@ -251,6 +251,7 @@ export function renderLoginPage(container, data) {
                 <span class="btn-icon">⚔️</span> LOGIN
               </button>
               <p class="login-or-text">or create a new account</p>
+              <button type="button" class="guest-btn" id="guestBtn">🌟 Continue as Guest</button>
             </form>
             <div class="login-bottom-bar">
               <button class="bottom-action-btn" id="showSignup">CREATE ACCOUNT</button>
@@ -319,6 +320,16 @@ export function renderLoginPage(container, data) {
     flipper.classList.remove('flipped');
   });
 
+  // Guest Login - skip auth entirely
+  document.getElementById('guestBtn')?.addEventListener('click', () => {
+    gameState.playerName = 'Guest Adventurer';
+    const btn = document.getElementById('guestBtn');
+    btn.textContent = '✨ Portal Opening...';
+    setTimeout(() => {
+      if (data.router) data.router.navigate('intro', { router: data.router, particles: data.particles });
+    }, 500);
+  });
+
   // Login Handler
   document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -329,18 +340,24 @@ export function renderLoginPage(container, data) {
     btn.textContent = '✨ Opening Portal...';
     btn.disabled = true;
 
-    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+    try {
+      const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
 
-    if (error) {
-      alert(`Portal Error: ${error.message}`);
-      btn.textContent = '⚔️ LOGIN';
+      if (error) {
+        alert(`Portal Error: ${error.message}`);
+        btn.innerHTML = '<span class="btn-icon">⚔️</span> LOGIN';
+        btn.disabled = false;
+        return;
+      }
+
+      gameState.playerName = authData.user.user_metadata?.full_name || 'Brave Soul';
+      await loadUserStats();
+      if (data.router) data.router.navigate('intro', { router: data.router, particles: data.particles });
+    } catch (err) {
+      alert(`Connection Error: ${err.message}`);
+      btn.innerHTML = '<span class="btn-icon">⚔️</span> LOGIN';
       btn.disabled = false;
-      return;
     }
-
-    gameState.playerName = authData.user.user_metadata.full_name || 'Brave Soul';
-    await loadUserStats(); // Fetch DB data
-    if (data.router) data.router.navigate('intro', { router: data.router, particles: data.particles });
   });
 
   // Signup Handler
@@ -349,35 +366,49 @@ export function renderLoginPage(container, data) {
     const name = document.getElementById('signupName').value.trim();
     const email = document.getElementById('signupEmail').value.trim();
     const password = document.getElementById('signupPass').value;
-    const confirm = document.getElementById('signupConfirm')?.value; // Note: Confirm field exists in HTML but might need check
+
+    if (password.length < 6) {
+      alert('Your password must be at least 6 characters long!');
+      return;
+    }
 
     const btn = document.getElementById('signupBtn');
     btn.textContent = '✨ Casting Spell...';
     btn.disabled = true;
 
-    const { data: authData, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name }
+    try {
+      const { data: authData, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name }
+        }
+      });
+
+      if (error) {
+        alert(`Spell Mishap: ${error.message}`);
+        btn.innerHTML = '<span class="btn-icon">✦</span> JOIN THE ACADEMY';
+        btn.disabled = false;
+        return;
       }
-    });
 
-    if (error) {
-      alert(`Spell Mishap: ${error.message}`);
-      btn.textContent = '✦ JOIN THE ACADEMY';
+      // If auto-confirmed (no email verification), log in directly
+      if (authData.session) {
+        gameState.playerName = name;
+        await loadUserStats();
+        if (data.router) data.router.navigate('intro', { router: data.router, particles: data.particles });
+      } else {
+        alert('✉️ Check your email to confirm your enrollment, then sign in!');
+        flipper.classList.remove('flipped');
+        btn.innerHTML = '<span class="btn-icon">✦</span> JOIN THE ACADEMY';
+        btn.disabled = false;
+      }
+    } catch (err) {
+      alert(`Connection Error: ${err.message}`);
+      btn.innerHTML = '<span class="btn-icon">✦</span> JOIN THE ACADEMY';
       btn.disabled = false;
-      return;
     }
-
-    if (authData.user) {
-      alert('Success! Check your email to confirm your enrollment (if enabled), or proceed to login.');
-      flipper.classList.remove('flipped');
-    }
-    btn.textContent = '✦ JOIN THE ACADEMY';
-    btn.disabled = false;
   });
-
 
   if (data.particles) {
     data.particles.start(30, { color: 'rgba(212, 168, 71, 0.5)', maxSize: 2.5, speed: 0.4 });
