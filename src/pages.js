@@ -117,22 +117,20 @@ function getRank(xp) {
 // Expression image mapping - each file has 3 expressions side-by-side
 // We use CSS object-position to crop to a specific expression
 const expressions = {
-  neutral:      { src: '/assets/expr_neutral_happy.jpeg', pos: '0% center' },
-  neutralSad:   { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },
-  thinking:     { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },
-  happy:        { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
-  smug:         { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
-  soft:         { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
-  curious:      { src: '/assets/expr_concerned.jpeg', pos: '0% center' },
-  surprised:    { src: '/assets/expr_concerned.jpeg', pos: '50% center' },
-  awkward:      { src: '/assets/expr_concerned.jpeg', pos: '100% center' },
-  angry:        { src: '/assets/expr_angry.jpeg', pos: '0% center' },
-  annoyed:      { src: '/assets/expr_angry.jpeg', pos: '50% center' },
-  tsundere:     { src: '/assets/expr_angry.jpeg', pos: '100% center' },
-  determined:   { src: '/assets/expr_angry.jpeg', pos: '0% center' },
-  crying:       { src: '/assets/expr_concerned.jpeg', pos: '100% center' }, 
-  embarrassed:  { src: '/assets/expr_concerned.jpeg', pos: '100% center' },
-  teasing:      { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' }, 
+  neutral:      { src: '/assets/expr_neutral_happy.jpeg', pos: '0% 0%' },
+  neutralSad:   { src: '/assets/expr_neutral_happy.jpeg', pos: '50% 0%' },
+  thinking:     { src: '/assets/expr_neutral_happy.jpeg', pos: '50% 0%' },
+  happy:        { src: '/assets/expr_neutral_happy.jpeg', pos: '100% 0%' },
+  smug:         { src: '/assets/expr_neutral_happy.jpeg', pos: '100% 0%' },
+  curious:      { src: '/assets/expr_concerned.jpeg', pos: '0% 0%' },
+  surprised:    { src: '/assets/expr_concerned.jpeg', pos: '50% 0%' },
+  awkward:      { src: '/assets/expr_concerned.jpeg', pos: '100% 0%' },
+  angry:        { src: '/assets/expr_angry.jpeg', pos: '0% 0%' },
+  annoyed:      { src: '/assets/expr_angry.jpeg', pos: '50% 0%' },
+  tsundere:     { src: '/assets/expr_angry.jpeg', pos: '100% 0%' },
+  determined:   { src: '/assets/expr_angry.jpeg', pos: '0% 0%' },
+  crying:       { src: '/assets/expr_concerned.jpeg', pos: '100% 0%' }, 
+  embarrassed:  { src: '/assets/expr_concerned.jpeg', pos: '100% 0%' },
 };
 
 // Dialogue pools
@@ -448,8 +446,8 @@ export function renderIntroPage(container, data) {
       <div class="intro-content">
         <div class="guide-character-wrapper">
           <div class="guide-character-container" id="guideContainer">
-            <img src="/assets/expr_neutral_happy.jpeg" class="guide-character-img" id="guideImg" alt="Your Guide"
-              style="object-position: 0% center" />
+            <div class="guide-character-sprite" id="guideSprite" 
+                 style="background-image: url('/assets/expr_neutral_happy.jpeg'); background-position: 0% 0%"></div>
           </div>
           <div class="guide-glow"></div>
         </div>
@@ -470,7 +468,7 @@ export function renderIntroPage(container, data) {
     </div>
   `;
 
-  const guideImg = document.getElementById('guideImg');
+  const guideSprite = document.getElementById('guideSprite');
   const textEl = document.getElementById('introText');
 
   // Preload expressions to avoid glitching
@@ -481,8 +479,8 @@ export function renderIntroPage(container, data) {
 
   function setExpression(expr) {
     const e = expressions[expr] || expressions.neutral;
-    guideImg.src = e.src;
-    guideImg.style.objectPosition = e.pos;
+    guideSprite.style.backgroundImage = `url('${e.src}')`;
+    guideSprite.style.backgroundPosition = e.pos;
   }
 
   const username = gameState.playerName || 'adventurer';
