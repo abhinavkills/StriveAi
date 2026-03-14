@@ -3,7 +3,7 @@
 // ==========================================
 import { subjectConfig, quizData, ranks, defaultSyllabi } from './data.js';
 import { supabase } from './supabase.js';
-import { generateGamifiedSyllabus } from './gemini.js';
+import { generateGamifiedSyllabus, generateStudyNotes } from './gemini.js';
 
 // Game state
 export const gameState = {
@@ -1214,20 +1214,25 @@ function openNotesGenerator(data) {
     output.style.display = 'none';
     loading.style.display = 'block';
     
-    // Simulate AI generation with medieval flavor
-    setTimeout(async () => {
-      loading.style.display = 'none';
-      output.style.display = 'block';
-      const fakeNotes = `
-        <h3 style="color:var(--gold); margin-bottom:12px; text-decoration:underline;">Scroll of ${topic}</h3>
-        <p>I. Basic Foundations of "${topic}" transcend the ordinary boundaries of understanding...</p>
-        <p>II. Key Principles to keep in your mind's eye: Always focus on the core essences of the subject matter.</p>
-        <p>III. Summary: Mastery requires patience and relentless pursuit of the truth within ${topic}.</p>
-        <p style="margin-top:15px; font-size:0.8rem; color:var(--gold-dark); text-align:right;">— Generated in the Arcane Academy Library</p>
-      `;
-      typewriterVN(output, fakeNotes, 20);
-      await addNoteDB(topic, fakeNotes); // Save to Supabase
-    }, 2000);
+    // Call the real Gemini AI for the Scholar's Library
+    (async () => {
+      try {
+        const result = await generateStudyNotes(topic);
+        loading.style.display = 'none';
+        output.style.display = 'block';
+        
+        if (result.success) {
+          typewriterVN(output, result.content, 20);
+          await addNoteDB(topic, result.content); // Save to Supabase
+        } else {
+          output.innerHTML = `<p style="color:#e74c3c; text-align:center; padding-top:40px;">The Scholar is unavailable: ${result.error}</p>`;
+        }
+      } catch (err) {
+        loading.style.display = 'none';
+        output.style.display = 'block';
+        output.innerHTML = `<p style="color:#e74c3c; text-align:center; padding-top:40px;">Arcane Connection Failed: ${err.message}</p>`;
+      }
+    })();
   });
 }
 

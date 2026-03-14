@@ -88,3 +88,42 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
     return { success: false, error: error.message };
   }
 }
+
+export async function generateStudyNotes(topic) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const prompt = `
+    You are an ancient scholar in a magical library. Provide a detailed study summary for the topic: "${topic}".
+    Format the response as HTML using medieval and scholarly language.
+    Include:
+    1. A grand title wrapped in <h3 style="color:var(--gold); text-decoration:underline;">Scroll of ${topic}</h3>
+    2. Section I: Foundations (detailed explanation)
+    3. Section II: Core Essences (key bullet points)
+    4. Section III: Scholarly Conclusion (a 2-sentence wrap-up)
+    5. A closing signature in <p style="margin-top:15px; font-size:0.8rem; color:var(--gold-dark); text-align:right;">— Transcribed in the Arcane Academy Library</p>
+    
+    Keep the tone mysterious but very educational. Use parchment-colored highlights where necessary.
+  `;
+
+  if (!apiKey) return { success: false, error: "API Key missing" };
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7 }
+      })
+    });
+
+    if (!response.ok) return { success: false, error: "Failed to reach the scholar" };
+
+    const data = await response.json();
+    const resultText = data.candidates[0].content.parts[0].text.replace(/```html/g, "").replace(/```/g, "").trim();
+    return { success: true, content: resultText };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
