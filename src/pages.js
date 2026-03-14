@@ -858,7 +858,8 @@ export function renderSyllabusSelectionPage(container, data) {
         if (data.router) data.router.navigate('level-map', { router: data.router, particles: data.particles });
       }, 1000);
     } else {
-      alert("The arcane AI failed to forge your path. Please try again later.");
+      console.error("Gemini failed to generate syllabus structure.");
+      alert("The arcane AI failed to forge your path. (Check if VITE_GEMINI_API_KEY is correctly set in your Vercel Dashboard or try again later.)");
       document.getElementById('aiLoading').style.display = 'none';
     }
   }

@@ -39,6 +39,11 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
     }
   `;
 
+  if (!GEMINI_API_KEY) {
+    console.error("Gemini API Key is missing! Forge failed.");
+    return null;
+  }
+
   try {
     const response = await fetch(GEMINI_URL, {
       method: "POST",
@@ -51,10 +56,17 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
       })
     });
 
-    if (!response.ok) throw new Error("Gemini API Error: " + response.statusText);
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(`Gemini API Error: ${response.status} ${errData.error?.message || response.statusText}`);
+    }
     
     const data = await response.json();
-    const resultText = data.candidates[0].content.parts[0].text;
+    let resultText = data.candidates[0].content.parts[0].text;
+    
+    // Clean up potential markdown blocks if they slipped through
+    resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
     return JSON.parse(resultText);
   } catch (error) {
     console.error("Error generating syllabus:", error);
