@@ -426,9 +426,9 @@ export function renderIntroPage(container, data) {
     <div class="intro-page">
       <div class="intro-content">
         <div class="guide-character-wrapper">
-          <div class="guide-character-container" id="guideContainer">
-            <img src="/assets/expr_neutral_happy.jpeg" class="guide-character-img" id="guideImg" alt="Your Guide"
-              style="object-position: 0% center" />
+          <div class="guide-character-sprite-box" id="guideContainer">
+            <div class="guide-sprite-layer layer-back" id="guideSpriteBack"></div>
+            <div class="guide-sprite-layer layer-front" id="guideSpriteFront"></div>
           </div>
           <div class="guide-glow"></div>
         </div>
@@ -449,13 +449,28 @@ export function renderIntroPage(container, data) {
     </div>
   `;
 
-  const guideImg = document.getElementById('guideImg');
+  const spriteFront = document.getElementById('guideSpriteFront');
+  const spriteBack = document.getElementById('guideSpriteBack');
   const textEl = document.getElementById('introText');
+
+  // Preload expressions to avoid glitching
+  Object.values(expressions).forEach(e => {
+    const img = new Image();
+    img.src = e.src;
+  });
 
   function setExpression(expr) {
     const e = expressions[expr] || expressions.neutral;
-    guideImg.src = e.src;
-    guideImg.style.objectPosition = e.pos;
+    const style = `background-image: url('${e.src}'); background-position: ${e.pos};`;
+    
+    // Cross-fade logic
+    spriteBack.style.cssText = spriteFront.style.cssText;
+    spriteBack.style.opacity = '1';
+    
+    spriteFront.style.opacity = '0';
+    setTimeout(() => {
+      spriteFront.style.cssText = style + ' opacity: 1;';
+    }, 50);
   }
 
   const username = gameState.playerName || 'adventurer';
@@ -508,17 +523,31 @@ export function renderIntroPage(container, data) {
     }
     const step = introSteps[stepIdx];
     setExpression(step.expr);
+    
     typewriterVN(textEl, step.text, 25, () => {
       stepIdx++;
-      const nextHandler = () => {
+      
+      const nextBtn = document.createElement('div');
+      nextBtn.className = 'dialogue-next-prompt';
+      nextBtn.innerHTML = '<span>▼</span>';
+      textEl.appendChild(nextBtn);
+
+      const nextHandler = (e) => {
+        e.stopPropagation();
         document.removeEventListener('click', nextHandler);
         playStep();
       };
+
       setTimeout(() => {
         document.addEventListener('click', nextHandler, { once: true });
-        // Auto-next for short sentences
-        if (step.text.length < 15) setTimeout(() => { document.removeEventListener('click', nextHandler); if (stepIdx <= introSteps.length) playStep(); }, 1500);
-      }, 400);
+        // Auto-next for very short sentences (less than 10 chars)
+        if (step.text.length < 10) {
+          setTimeout(() => { 
+            document.removeEventListener('click', nextHandler); 
+            if (stepIdx <= introSteps.length) playStep(); 
+          }, 1200);
+        }
+      }, 500);
     });
   }
 
@@ -555,7 +584,28 @@ export function renderIntroPage(container, data) {
       setExpression(s.expr);
       typewriterVN(textEl, s.text, 25, () => {
         pIdx++;
-        setTimeout(playPost, 1200);
+        
+        const nextBtn = document.createElement('div');
+        nextBtn.className = 'dialogue-next-prompt';
+        nextBtn.innerHTML = '<span>▼</span>';
+        textEl.appendChild(nextBtn);
+
+        const nextHandler = (e) => {
+          e.stopPropagation();
+          document.removeEventListener('click', nextHandler);
+          playPost();
+        };
+
+        setTimeout(() => {
+          document.addEventListener('click', nextHandler, { once: true });
+          // Auto-next for short messages
+          if (s.text.length < 15) {
+            setTimeout(() => {
+              document.removeEventListener('click', nextHandler);
+              if (pIdx <= postNaming.length) playPost();
+            }, 1500);
+          }
+        }, 500);
       });
     }
     playPost();
