@@ -432,11 +432,11 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 }
 
 .center-text { text-align: center; }
-.subjects-header { position: relative; z-index: 10; padding: 40px 20px 20px; }
+.subjects-header { position: relative; z-index: 10; padding: 60px 20px 40px; }
 .subjects-header h1 { 
-  font-family: var(--font-display); font-size: 3rem; color: var(--gold-light);
-  text-shadow: 0 0 30px rgba(212,168,71,0.6), 0 2px 10px rgba(0,0,0,0.8);
-  letter-spacing: 8px; margin-bottom: 12px;
+  font-family: var(--font-display); font-size: 3.2rem; color: var(--gold-light);
+  text-shadow: 0 0 40px rgba(212,168,71,0.6), 0 2px 10px rgba(0,0,0,0.8);
+  letter-spacing: 12px; margin-bottom: 12px;
 }
 .subjects-header .subtitle {
   font-family: var(--font-medieval); font-size: 1.1rem; color: var(--parchment);
@@ -446,12 +446,12 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 .circular-layout-container {
   position: relative;
   width: 100%;
-  height: 600px;
+  height: 650px;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 5;
-  perspective: 1200px;
+  perspective: 1500px;
 }
 
 .path-card {
@@ -482,7 +482,7 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
   position: absolute;
   top: 50%; left: 50%;
   pointer-events: auto;
-  --radius: 280px;
+  --radius: 250px;
   --angle: calc(var(--index) * (360deg / 5));
   
   transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(-1 * var(--radius))) rotate(calc(-1 * var(--angle)));
@@ -491,7 +491,10 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
   animation-delay: calc(var(--index) * 0.15s + 0.5s);
   opacity: 0;
 }
-@keyframes pathCardEnter { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) rotate(calc(-1 * var(--angle))) scale(0.5); } 100% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(-1 * var(--radius))) rotate(calc(-1 * var(--angle))) scale(1); } }
+@keyframes pathCardEnter { 
+  0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) rotate(calc(-1 * var(--angle))) scale(0.5); } 
+  100% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(-1 * var(--radius))) rotate(calc(-1 * var(--angle))) scale(1); } 
+}
 
 .path-card-inner {
   width: 150px; height: 170px; position: relative;
