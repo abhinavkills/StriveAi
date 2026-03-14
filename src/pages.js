@@ -97,18 +97,21 @@ function getRank(xp) {
 // Expression image mapping - each file has 3 expressions side-by-side
 // We use CSS object-position to crop to a specific expression
 const expressions = {
-  neutral:    { src: '/assets/expr_neutral_happy.jpeg', pos: '0% center' },
-  neutralSad: { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },
-  happy:      { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
-  angry:      { src: '/assets/expr_angry.jpeg', pos: '0% center' },
-  annoyed:    { src: '/assets/expr_angry.jpeg', pos: '50% center' },
-  pouty:      { src: '/assets/expr_angry.jpeg', pos: '100% center' },
-  concerned:  { src: '/assets/expr_concerned.jpeg', pos: '0% center' },
-  surprised:  { src: '/assets/expr_concerned.jpeg', pos: '50% center' },
-  agitated:   { src: '/assets/expr_concerned.jpeg', pos: '100% center' },
-  crying:     { src: '/assets/expr_crying.jpeg', pos: '0% center' },
-  glare:      { src: '/assets/expr_crying.jpeg', pos: '50% center' },
-  fakeSmile:  { src: '/assets/expr_crying.jpeg', pos: '100% center' },
+  neutral:      { src: '/assets/expr_neutral_happy.jpeg', pos: '0% center' },
+  thinking:     { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },
+  happy:        { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
+  smug:         { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
+  soft:         { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
+  curious:      { src: '/assets/expr_concerned.jpeg', pos: '0% center' },
+  surprised:    { src: '/assets/expr_concerned.jpeg', pos: '50% center' },
+  awkward:      { src: '/assets/expr_concerned.jpeg', pos: '100% center' },
+  angry:        { src: '/assets/expr_angry.jpeg', pos: '0% center' },
+  annoyed:      { src: '/assets/expr_angry.jpeg', pos: '50% center' },
+  tsundere:     { src: '/assets/expr_angry.jpeg', pos: '100% center' },
+  determined:   { src: '/assets/expr_angry.jpeg', pos: '0% center' },
+  crying:       { src: '/assets/expr_crying.jpeg', pos: '0% center' },
+  embarrassed:  { src: '/assets/expr_crying.jpeg', pos: '50% center' },
+  teasing:      { src: '/assets/expr_crying.jpeg', pos: '100% center' },
 };
 
 // Dialogue pools
@@ -455,46 +458,107 @@ export function renderIntroPage(container, data) {
     guideImg.style.objectPosition = e.pos;
   }
 
+  const username = gameState.playerName || 'adventurer';
   const introSteps = [
-    { expr: 'happy', text: `Oh! A new adventurer approaches! Welcome, ${gameState.playerName || 'brave soul'}! 💫` },
-    { expr: 'neutral', text: `I've been waiting for someone curious and bold like you to find their way here~ ✨` },
-    { expr: 'happy', text: `I'll be your guide through this magical realm of learning. Together, we'll conquer knowledge quests! 🌟` },
-    { expr: 'neutralSad', text: `But first... every guide needs a name, don't you think? Something cute, perhaps? 😊` },
+    { expr: 'curious', text: `So you're ${username}…` },
+    { expr: 'thinking', text: `Hmm.` },
+    { expr: 'thinking', text: `I was wondering when someone new would wander into these lands.` },
+    { expr: 'neutral', text: `You look a little… lost.` },
+    { expr: 'surprised', text: `Wait.` },
+    { expr: 'annoyed', text: `Don't tell me you came all the way out here without a guide.` },
+    { expr: 'smug', text: `Wow.` },
+    { expr: 'smug', text: `You're either incredibly brave…` },
+    { expr: 'smug', text: `or spectacularly dumb.` },
+    { expr: 'teasing', text: `These lands aren't exactly friendly to wandering adventurers.` },
+    { expr: 'teasing', text: `Every realm hides trials, puzzles, and knowledge tests.` },
+    { expr: 'thinking', text: `Physics valleys.` },
+    { expr: 'thinking', text: `Chemical forests.` },
+    { expr: 'thinking', text: `Mathematical ruins.` },
+    { expr: 'thinking', text: `Even experienced travelers lose their way here.` },
+    { expr: 'annoyed', text: `And you just walked in here alone?` },
+    { expr: 'awkward', text: `…Not that I care what happens to you.` },
+    { expr: 'embarrassed', text: `I mean—` },
+    { expr: 'embarrassed', text: `it's not like I'd feel responsible if you got completely stuck somewhere.` },
+    { expr: 'tsundere', text: `But if you do get stuck…` },
+    { expr: 'tsundere', text: `you'll just end up being a nuisance.` },
+    { expr: 'awkward', text: `So…` },
+    { expr: 'embarrassed', text: `I guess I could—` },
+    { expr: 'tsundere', text: `Ugh. This is going to sound weird.` },
+    { expr: 'tsundere', text: `I suppose I could let you have me as your guide.` },
+    { expr: 'teasing', text: `Don't misunderstand.` },
+    { expr: 'teasing', text: `I'm not doing it for you.` },
+    { expr: 'soft', text: `Someone has to keep you from getting hopelessly lost.` },
+    { expr: 'thinking', text: `Though…` },
+    { expr: 'thinking', text: `there is one small problem.` },
+    { expr: 'awkward', text: `You can't exactly keep calling me "Guide" forever.` },
+    { expr: 'embarrassed', text: `That would be… weird.` },
+    { expr: 'tsundere', text: `S-so if you're going to drag me around as your guide…` },
+    { expr: 'tsundere', text: `you should probably give me a proper name.` },
+    { expr: 'teasing', text: `Go on then.` },
+    { expr: 'teasing', text: `What are you going to call me?` }
   ];
 
   let stepIdx = 0;
 
   function playStep() {
     if (stepIdx >= introSteps.length) {
+      document.getElementById('nameSection').querySelector('p').textContent = "Enter a name for your guide:";
       document.getElementById('nameSection').style.display = 'block';
-      document.getElementById('nameSection').style.animation = 'fadeSlideUp 0.6s var(--ease-bounce)';
       return;
     }
     const step = introSteps[stepIdx];
     setExpression(step.expr);
-    typewriterVN(textEl, step.text, 30, () => {
+    typewriterVN(textEl, step.text, 25, () => {
       stepIdx++;
-      setTimeout(playStep, 1000);
+      const nextHandler = () => {
+        document.removeEventListener('click', nextHandler);
+        playStep();
+      };
+      setTimeout(() => {
+        document.addEventListener('click', nextHandler, { once: true });
+        // Auto-next for short sentences
+        if (step.text.length < 15) setTimeout(() => { document.removeEventListener('click', nextHandler); if (stepIdx <= introSteps.length) playStep(); }, 1500);
+      }, 400);
     });
   }
 
-  if (gameState.guideName) {
-    stepIdx = introSteps.length;
-    playStep();
-    return;
-  }
-
+  if (gameState.guideName) { playStep(); return; }
   setTimeout(playStep, 800);
 
   document.getElementById('confirmNameBtn').addEventListener('click', async () => {
-    const name = document.getElementById('guideNameInput').value.trim() || 'Luna';
+    const input = document.getElementById('guideNameInput');
+    const name = input.value.trim();
+    if (!name) { alert("Hey! I'm not that forgettable, am I? Give me a name!"); return; }
+    
     gameState.guideName = name;
-    await saveProfileUpdate(); // Save to Supabase
-    setExpression('happy');
-    typewriterVN(textEl, `${name}... I love it! 💖 From now on, I'm ${name}, your loyal companion on this adventure!`, 25, () => {
-      document.getElementById('nameSection').style.display = 'none';
-      document.getElementById('continueBtn').classList.add('visible');
-    });
+    await saveProfileUpdate(); 
+    document.getElementById('nameSection').style.display = 'none';
+
+    // Post-naming sequence exactly as prompt
+    const postNaming = [
+      { expr: 'curious', text: `Hmm… ${name}, huh?` },
+      { expr: 'soft', text: `…It's not bad.` },
+      { expr: 'tsundere', text: `Not that I particularly care what you picked.` },
+      { expr: 'determined', text: `Alright then, ${username}.` },
+      { expr: 'smug', text: `From now on…` },
+      { expr: 'smug', text: `I'll be your guide through the realms of knowledge.` },
+      { expr: 'smug', text: `Try not to slow me down.` }
+    ];
+
+    let pIdx = 0;
+    function playPost() {
+      if (pIdx >= postNaming.length) {
+        document.getElementById('continueBtn').classList.add('visible');
+        return;
+      }
+      const s = postNaming[pIdx];
+      setExpression(s.expr);
+      typewriterVN(textEl, s.text, 25, () => {
+        pIdx++;
+        setTimeout(playPost, 1200);
+      });
+    }
+    playPost();
   });
 
   document.getElementById('continueBtn').addEventListener('click', () => {
