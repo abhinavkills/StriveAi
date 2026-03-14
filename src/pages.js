@@ -109,9 +109,9 @@ const expressions = {
   annoyed:      { src: '/assets/expr_angry.jpeg', pos: '50% center' },
   tsundere:     { src: '/assets/expr_angry.jpeg', pos: '100% center' },
   determined:   { src: '/assets/expr_angry.jpeg', pos: '0% center' },
-  crying:       { src: '/assets/expr_crying.jpeg', pos: '0% center' },
-  embarrassed:  { src: '/assets/expr_crying.jpeg', pos: '50% center' },
-  teasing:      { src: '/assets/expr_crying.jpeg', pos: '100% center' },
+  crying:       { src: '/assets/expr_concerned.jpeg', pos: '100% center' }, // Replaced cry with awkward
+  embarrassed:  { src: '/assets/expr_concerned.jpeg', pos: '100% center' }, // Replaced cry with awkward
+  teasing:      { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },  // Replaced cry with thinking
 };
 
 // Dialogue pools
@@ -626,6 +626,7 @@ export function renderSubjectsPage(container, data) {
           <div class="tear-icon" id="tearIcon"></div>
           <h1 id="tearSubjectName" class="medieval-bold"></h1>
           <p class="tear-role medieval-text" id="tearRole"></p>
+          <div class="tear-brief-bubble medieval-text" id="tearBrief"></div>
         </div>
       </div>
     </div>
@@ -656,9 +657,22 @@ export function renderSubjectsPage(container, data) {
 
         setTimeout(() => { tear.classList.add('active'); }, 50);
 
-        setTimeout(() => {
-          if (data.router) data.router.navigate(nextPath, { router: data.router, particles: data.particles });
-        }, 1800);
+        // Show guide briefing
+        const briefs = {
+          math: "Sacred Mathematics… the language of the cosmos itself. Ready to solve the runes of logic?",
+          chemistry: "Alchemical Chemistry! A path of transformation and essence. Don't blow anything up!",
+          physics: "Celestial Physics. You'll be charting the stars and the fundamental forces of reality.",
+          coding: "Arcane Coding—mastering the silicon spells and binary enchantments of the modern era.",
+          biology: "Natural Biology. The study of life's intricate patterns and the organic pulse of the world.",
+          essentials: "The Scholar Guild. Your journey starts with the foundations of wisdom and ancient tools."
+        };
+
+        const briefEl = document.getElementById('tearBrief');
+        typewriterVN(briefEl, briefs[subject] || "A fine choice, adventurer. Your path awaits!", 35, () => {
+          setTimeout(() => {
+            if (data.router) data.router.navigate(nextPath, { router: data.router, particles: data.particles });
+          }, 1500);
+        });
       }, 600);
     });
   });
