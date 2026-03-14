@@ -2,9 +2,11 @@
 // Page Renderers - All page UI generation
 // ==========================================
 import { subjectConfig, quizData, ranks } from './data.js';
+import { supabase } from './supabase.js';
+
 
 // Game state
-const gameState = {
+export const gameState = {
   playerName: '',
   guideName: '',
   xp: 0,
@@ -13,6 +15,78 @@ const gameState = {
   tasks: [],
   notes: []
 };
+
+// --- Supabase Sync Functions ---
+export async function loadUserStats() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+  if (profile) {
+    gameState.xp = profile.xp || 0;
+    gameState.guideName = profile.guide_name || '';
+  }
+
+  const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', user.id);
+  if (tasks) gameState.tasks = tasks;
+
+  const { data: notes } = await supabase.from('notes').select('*').eq('user_id', user.id);
+  if (notes) gameState.notes = notes;
+
+  const { data: progress } = await supabase.from('user_progress').select('*').eq('user_id', user.id);
+  if (progress) {
+    gameState.completedTiles = {};
+    progress.forEach(p => {
+      if (!gameState.completedTiles[p.subject_id]) gameState.completedTiles[p.subject_id] = [];
+      gameState.completedTiles[p.subject_id].push(p.tile_index);
+    });
+  }
+}
+
+export async function saveProfileUpdate() {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('profiles').update({ 
+    xp: gameState.xp, 
+    guide_name: gameState.guideName 
+  }).eq('id', user.id);
+}
+
+export async function addTaskDB(title) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const { data } = await supabase.from('tasks').insert([{ user_id: user.id, title }]).select().single();
+  if (data) gameState.tasks.push(data);
+  return data;
+}
+
+export async function toggleTaskDB(taskId, isCompleted) {
+  await supabase.from('tasks').update({ is_completed: isCompleted }).eq('id', taskId);
+}
+
+export async function deleteTaskDB(taskId) {
+  await supabase.from('tasks').delete().eq('id', taskId);
+  gameState.tasks = gameState.tasks.filter(t => t.id !== taskId);
+}
+
+export async function addNoteDB(topic, content) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  const { data } = await supabase.from('notes').insert([{ user_id: user.id, topic, content }]).select().single();
+  if (data) gameState.notes.push(data);
+  return data;
+}
+
+export async function saveProgressDB(subjectId, tileIndex) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('user_progress').upsert({ 
+    user_id: user.id, 
+    subject_id: subjectId, 
+    tile_index: tileIndex 
+  });
+}
+// --- End Sync Functions ---
 
 function getRank(xp) {
   let rank = ranks[0];
@@ -160,14 +234,14 @@ export function renderLoginPage(container, data) {
             </div>
             <form class="login-form" id="loginForm">
               <div class="form-group">
-                <label>Username</label>
+                <label>Arcane Address (Email)</label>
                 <div class="input-wrapper">
-                  <span class="input-icon">👤</span>
-                  <input type="text" id="loginName" placeholder="Enter your name, brave soul..." required autocomplete="off" />
+                  <span class="input-icon">📧</span>
+                  <input type="email" id="loginEmail" placeholder="Enter your email..." required autocomplete="on" />
                 </div>
               </div>
               <div class="form-group">
-                <label>Password</label>
+                <label>Secret Incantation</label>
                 <div class="input-wrapper">
                   <span class="input-icon">🔒</span>
                   <input type="password" id="loginPass" placeholder="Whisper your password..." required />
@@ -202,20 +276,20 @@ export function renderLoginPage(container, data) {
                 </div>
               </div>
               <div class="form-group">
+                <label>Email Address</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">📧</span>
+                  <input type="email" id="signupEmail" placeholder="Your arcane address..." required autocomplete="on" />
+                </div>
+              </div>
+              <div class="form-group">
                 <label>Create Incantation</label>
                 <div class="input-wrapper">
                   <span class="input-icon">🔒</span>
                   <input type="password" id="signupPass" placeholder="Create your password..." required />
                 </div>
               </div>
-              <div class="form-group">
-                <label>Confirm Incantation</label>
-                <div class="input-wrapper">
-                  <span class="input-icon">🔒</span>
-                  <input type="password" id="signupConfirm" placeholder="Repeat your password..." required />
-                </div>
-              </div>
-              <button type="submit" class="login-btn">
+              <button type="submit" class="login-btn" id="signupBtn">
                 <span class="btn-icon">✦</span> JOIN THE ACADEMY
               </button>
             </form>
@@ -245,39 +319,65 @@ export function renderLoginPage(container, data) {
     flipper.classList.remove('flipped');
   });
 
-  // Login
-  document.getElementById('loginForm').addEventListener('submit', (e) => {
+  // Login Handler
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const name = document.getElementById('loginName').value.trim();
-    if (name) {
-      gameState.playerName = name;
-      const btn = document.getElementById('loginBtn');
-      btn.style.transform = 'scale(0.95)';
-      btn.textContent = '✨ Portal Opening... ✨';
-      setTimeout(() => {
-        if (data.router) data.router.navigate('intro', { router: data.router, particles: data.particles });
-      }, 600);
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPass').value;
+    const btn = document.getElementById('loginBtn');
+
+    btn.textContent = '✨ Opening Portal...';
+    btn.disabled = true;
+
+    const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      alert(`Portal Error: ${error.message}`);
+      btn.textContent = '⚔️ LOGIN';
+      btn.disabled = false;
+      return;
     }
+
+    gameState.playerName = authData.user.user_metadata.full_name || 'Brave Soul';
+    await loadUserStats(); // Fetch DB data
+    if (data.router) data.router.navigate('intro', { router: data.router, particles: data.particles });
   });
 
-  // Signup
-  document.getElementById('signupForm').addEventListener('submit', (e) => {
+  // Signup Handler
+  document.getElementById('signupForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('signupName').value.trim();
-    if (name) {
-      gameState.playerName = name;
-      flipper.classList.remove('flipped');
-      setTimeout(() => {
-        document.getElementById('loginName').value = name;
-        // Auto-trigger login transition
-        const btn = document.getElementById('loginBtn');
-        btn.textContent = '✨ Portal Opening... ✨';
-        setTimeout(() => {
-          if (data.router) data.router.navigate('intro', { router: data.router, particles: data.particles });
-        }, 600);
-      }, 800);
+    const email = document.getElementById('signupEmail').value.trim();
+    const password = document.getElementById('signupPass').value;
+    const confirm = document.getElementById('signupConfirm')?.value; // Note: Confirm field exists in HTML but might need check
+
+    const btn = document.getElementById('signupBtn');
+    btn.textContent = '✨ Casting Spell...';
+    btn.disabled = true;
+
+    const { data: authData, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name }
+      }
+    });
+
+    if (error) {
+      alert(`Spell Mishap: ${error.message}`);
+      btn.textContent = '✦ JOIN THE ACADEMY';
+      btn.disabled = false;
+      return;
     }
+
+    if (authData.user) {
+      alert('Success! Check your email to confirm your enrollment (if enabled), or proceed to login.');
+      flipper.classList.remove('flipped');
+    }
+    btn.textContent = '✦ JOIN THE ACADEMY';
+    btn.disabled = false;
   });
+
 
   if (data.particles) {
     data.particles.start(30, { color: 'rgba(212, 168, 71, 0.5)', maxSize: 2.5, speed: 0.4 });
@@ -347,11 +447,18 @@ export function renderIntroPage(container, data) {
     });
   }
 
+  if (gameState.guideName) {
+    stepIdx = introSteps.length;
+    playStep();
+    return;
+  }
+
   setTimeout(playStep, 800);
 
-  document.getElementById('confirmNameBtn').addEventListener('click', () => {
+  document.getElementById('confirmNameBtn').addEventListener('click', async () => {
     const name = document.getElementById('guideNameInput').value.trim() || 'Luna';
     gameState.guideName = name;
+    await saveProfileUpdate(); // Save to Supabase
     setExpression('happy');
     typewriterVN(textEl, `${name}... I love it! 💖 From now on, I'm ${name}, your loyal companion on this adventure!`, 25, () => {
       document.getElementById('nameSection').style.display = 'none';
@@ -375,17 +482,16 @@ export function renderSubjectsPage(container, data) {
   const subjects = Object.entries(subjectConfig).filter(([key]) => key !== 'essentials');
   const essentials = subjectConfig.essentials;
 
-  const artifactsHtml = subjects.map(([key, sub], i) => `
-    <div class="artifact-slot" data-subject="${key}" style="animation-delay:${i * 0.15}s">
-      <div class="artifact-wrapper">
-        <div class="artifact-img artifact-${key}"></div>
-        <div class="artifact-glow"></div>
-        <div class="artifact-particles"></div>
-        <div class="artifact-pedestal"></div>
+  const cardsHtml = subjects.map(([key, sub], i) => `
+    <div class="path-card" data-subject="${key}" style="animation-delay:${i * 0.12}s; --card-color:${sub.color}">
+      <div class="path-card-glow"></div>
+      <div class="path-card-inner">
+        <div class="path-card-icon">${sub.icon}</div>
+        <div class="path-card-ring"></div>
       </div>
-      <div class="artifact-label">
-        <span class="artifact-name">${sub.name}</span>
-        <span class="artifact-role">${sub.role}</span>
+      <div class="path-card-info">
+        <span class="path-card-name">${sub.name}</span>
+        <span class="path-card-role">${sub.role}</span>
       </div>
     </div>
   `).join('');
@@ -394,18 +500,18 @@ export function renderSubjectsPage(container, data) {
     <div class="subjects-page artifact-select-page">
       <div class="subjects-header">
         <h1>Invoke Your Path</h1>
-        <p class="subtitle">Select a magical artifact to begin your mastery of a domain</p>
+        <p class="subtitle">Choose a domain to begin your mastery — each holds ancient power</p>
       </div>
-      <div class="artifacts-row" id="artifactsRow">${artifactsHtml}</div>
+      <div class="paths-grid" id="pathsGrid">${cardsHtml}</div>
       <div class="essentials-shortcut" id="essShortcut">
         <span>📜</span>
         <span>${essentials.name} — ${essentials.role}</span>
       </div>
       <div class="guide-mini" id="guideMini">
         <div class="guide-mini-bubble">${randomFrom([
-          `Select your discipline, ${gameState.playerName || 'adventurer'}! Each artifact holds ancient power~ ✨`,
-          `Which path calls to you? 🔮`,
-          `Commune with an artifact to begin!`,
+          `Select your discipline, ${gameState.playerName || 'adventurer'}! Each path holds ancient power~ ✨`,
+          `Which domain calls to you? 🔮`,
+          `Touch a card to invoke its power!`,
         ])}</div>
         <img src="/assets/expr_neutral_happy.jpeg" class="guide-mini-img" style="object-position:0% center" alt="Guide" />
       </div>
@@ -424,7 +530,9 @@ export function renderSubjectsPage(container, data) {
         <div class="tear-left"></div>
         <div class="tear-right"></div>
         <div class="tear-reveal" id="tearReveal">
+          <div class="tear-icon" id="tearIcon"></div>
           <h1 id="tearSubjectName"></h1>
+          <p class="tear-role" id="tearRole"></p>
         </div>
       </div>
     </div>
@@ -435,23 +543,25 @@ export function renderSubjectsPage(container, data) {
     if (data.router) data.router.navigate('essentials', { router: data.router, particles: data.particles });
   });
 
-  // Artifact interactions
-  container.querySelectorAll('.artifact-slot').forEach(slot => {
-    slot.addEventListener('click', () => {
-      const subject = slot.dataset.subject;
+  // Path card interactions
+  container.querySelectorAll('.path-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const subject = card.dataset.subject;
       const sub = subjectConfig[subject];
       gameState.currentSubject = subject;
 
       // Fade other cards
-      container.querySelectorAll('.artifact-slot').forEach(s => {
-        if (s !== slot) s.classList.add('fading');
+      container.querySelectorAll('.path-card').forEach(s => {
+        if (s !== card) s.classList.add('fading');
       });
-      slot.classList.add('invoking');
+      card.classList.add('invoking');
 
-      // Artifact invokes - show tear effect
+      // Show tear effect
       setTimeout(() => {
         const tear = document.getElementById('swordTear');
+        document.getElementById('tearIcon').textContent = sub.icon;
         document.getElementById('tearSubjectName').textContent = sub.name.toUpperCase();
+        document.getElementById('tearRole').textContent = sub.role;
         tear.style.display = 'flex';
 
         setTimeout(() => { tear.classList.add('active'); }, 50);
@@ -508,13 +618,13 @@ export function renderAdventurePage(container, data) {
   const sub = subjectConfig[subject];
   const rank = getRank(gameState.xp);
   const xpPercent = Math.min(100, (gameState.xp % 100));
-  const completedSet = gameState.completedTiles[subject] || new Set();
+  const completedArr = gameState.completedTiles[subject] || [];
 
   const tileCount = 5;
   const tilesHtml = [];
   for (let i = 1; i <= tileCount; i++) {
-    const isCompleted = completedSet.has && completedSet.has(i);
-    const isLocked = i > 1 && !(completedSet.has && completedSet.has(i - 1)) && i > (completedSet.size || 0) + 1;
+    const isCompleted = completedArr.includes(i);
+    const isLocked = i > 1 && !completedArr.includes(i - 1) && i > completedArr.length + 1;
     const cls = isCompleted ? 'completed' : (isLocked ? 'locked' : '');
     const labels = ['Basics', 'Challenge', 'Advanced', 'Expert', 'Final Boss'];
     tilesHtml.push(`
@@ -669,9 +779,16 @@ function openQuiz(subject, tileNum, data) {
         guideText.textContent = randomFrom(correctDialogues);
         gameState.xp += 25;
 
-        if (!gameState.completedTiles[subject]) gameState.completedTiles[subject] = new Set();
-        gameState.completedTiles[subject].add(tileNum);
+        if (!gameState.completedTiles[subject]) gameState.completedTiles[subject] = [];
+        if (!gameState.completedTiles[subject].includes(tileNum)) {
+          gameState.completedTiles[subject].push(tileNum);
+        }
+        
         showXPReward(25);
+        
+        // Sync to Supabase
+        saveProfileUpdate(); 
+        saveProgressDB(subject, tileNum);
 
         setTimeout(() => {
           overlay.remove();
@@ -740,16 +857,6 @@ function openStudyPlanner(data) {
         <button id="addTaskBtn" class="confirm-btn" style="padding:0 20px;">✦ Add</button>
       </div>
       <div id="taskList" class="task-list" style="max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
-        ${gameState.tasks.length === 0 ? '<p style="text-align:center; color:var(--text-secondary); padding:20px; font-style:italic;">No active quests in your planner...</p>' : ''}
-        ${gameState.tasks.map((t, i) => `
-          <div class="task-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(212,168,71,0.08); border:1px solid rgba(212,168,71,0.2); border-radius:8px;">
-            <span style="${t.done ? 'text-decoration:line-through; opacity:0.6;' : ''}">${t.text}</span>
-            <div style="display:flex; gap:8px;">
-               <button class="task-check" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:${t.done ? '#4caf50' : '#888'}">✓</button>
-               <button class="task-del" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#f44336">✕</button>
-            </div>
-          </div>
-        `).join('')}
       </div>
     </div>
   `;
@@ -761,30 +868,37 @@ function openStudyPlanner(data) {
     list.innerHTML = gameState.tasks.length === 0 ? '<p style="text-align:center; color:var(--text-secondary); padding:20px; font-style:italic;">No active quests in your planner...</p>' : 
       gameState.tasks.map((t, i) => `
         <div class="task-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(212,168,71,0.08); border:1px solid rgba(212,168,71,0.2); border-radius:8px;">
-          <span style="${t.done ? 'text-decoration:line-through; opacity:0.6;' : ''}">${t.text}</span>
+          <span style="${t.is_completed ? 'text-decoration:line-through; opacity:0.6;' : ''}">${t.title}</span>
           <div style="display:flex; gap:8px;">
-             <button class="task-check" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:${t.done ? '#4caf50' : '#888'}">✓</button>
-             <button class="task-del" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#f44336">✕</button>
+             <button class="task-check" data-id="${t.id}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:${t.is_completed ? '#4caf50' : '#888'}">✓</button>
+             <button class="task-del" data-id="${t.id}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#f44336">✕</button>
           </div>
         </div>
       `).join('');
     
-    list.querySelectorAll('.task-check').forEach(btn => btn.addEventListener('click', () => {
-      gameState.tasks[btn.dataset.idx].done = !gameState.tasks[btn.dataset.idx].done;
-      refreshTasks();
+    list.querySelectorAll('.task-check').forEach(btn => btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const task = gameState.tasks.find(t => t.id === id);
+      if (task) {
+        task.is_completed = !task.is_completed;
+        await toggleTaskDB(id, task.is_completed);
+        refreshTasks();
+      }
     }));
     
-    list.querySelectorAll('.task-del').forEach(btn => btn.addEventListener('click', () => {
-      gameState.tasks.splice(btn.dataset.idx, 1);
+    list.querySelectorAll('.task-del').forEach(btn => btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      await deleteTaskDB(id);
       refreshTasks();
     }));
   };
 
-  modal.querySelector('#addTaskBtn').addEventListener('click', () => {
+  modal.querySelector('#addTaskBtn').addEventListener('click', async () => {
     const inp = modal.querySelector('#taskInput');
-    if (inp.value.trim()) {
-      gameState.tasks.push({ text: inp.value.trim(), done: false });
+    const val = inp.value.trim();
+    if (val) {
       inp.value = '';
+      await addTaskDB(val);
       refreshTasks();
     }
   });
@@ -859,7 +973,7 @@ function openNotesGenerator(data) {
     loading.style.display = 'block';
     
     // Simulate AI generation with medieval flavor
-    setTimeout(() => {
+    setTimeout(async () => {
       loading.style.display = 'none';
       output.style.display = 'block';
       const fakeNotes = `
@@ -870,6 +984,7 @@ function openNotesGenerator(data) {
         <p style="margin-top:15px; font-size:0.8rem; color:var(--gold-dark); text-align:right;">— Generated in the Arcane Academy Library</p>
       `;
       typewriterVN(output, fakeNotes, 20);
+      await addNoteDB(topic, fakeNotes); // Save to Supabase
     }, 2000);
   });
 }
@@ -880,7 +995,7 @@ function openProgressDashboard(data) {
   const nextRank = ranks[nextRankIdx] || rank;
   const progressToNext = nextRank === rank ? 100 : Math.floor(((gameState.xp - rank.xpRequired) / (nextRank.xpRequired - rank.xpRequired)) * 100);
 
-  const completedCount = Object.values(gameState.completedTiles).reduce((sum, set) => sum + (set.size || 0), 0);
+  const completedCount = Object.values(gameState.completedTiles).reduce((sum, set) => sum + (set?.length || 0), 0);
   
   const content = `
     <div class="dashboard-tool">
@@ -907,7 +1022,7 @@ function openProgressDashboard(data) {
          <h4 style="font-family:var(--font-heading); color:var(--gold); margin-bottom:10px; font-size:0.9rem;">DOMAIN PROFICIENCY</h4>
          <div style="display:flex; flex-direction:column; gap:10px;">
            ${Object.entries(subjectConfig).filter(([k]) => k !== 'essentials').map(([key, sub]) => {
-             const comp = gameState.completedTiles[key]?.size || 0;
+             const comp = gameState.completedTiles[key]?.length || 0;
              return `
                <div style="display:flex; align-items:center; gap:10px;">
                  <span style="width:100px; font-size:0.8rem;">${sub.name}</span>

@@ -5,6 +5,8 @@
 import './style.css';
 import { ParticleSystem } from './particles.js';
 import { Router } from './router.js';
+import { supabase } from './supabase.js';
+
 import {
   renderLoginPage,
   renderIntroPage,
@@ -25,8 +27,22 @@ router.register('adventure', (container, data) => renderAdventurePage(container,
 router.register('essentials', (container, data) => renderEssentialsPage(container, { ...data, router, particles }));
 
 // Start with the login page (no transition on first load)
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   const container = document.getElementById('page-container');
-  renderLoginPage(container, { router, particles });
-  router.currentRoute = 'login';
+  
+  // Check for existing session
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (session) {
+    // If logged in, skip to intro
+    import('./pages.js').then(async ({ gameState, loadUserStats }) => {
+      gameState.playerName = session.user.user_metadata.full_name || 'Brave Soul';
+      await loadUserStats(); // Load data from Supabase
+      router.navigate('intro', { router, particles });
+    });
+  } else {
+    renderLoginPage(container, { router, particles });
+    router.currentRoute = 'login';
+  }
 });
+

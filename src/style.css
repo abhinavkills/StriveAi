@@ -388,70 +388,117 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 .continue-btn.visible { opacity: 1; transform: translateY(0); transition: all 0.6s var(--ease-bounce); }
 .continue-btn:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 8px 30px rgba(107,47,160,0.4), var(--glow-gold); }
 
-/* ===== SUBJECT SELECTION - ARTIFACT INVOKING ===== */
-.artifact-select-page { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; background: radial-gradient(circle at center, var(--bg-medium) 0%, var(--bg-dark) 100%); position: relative; }
-.artifact-select-page::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('/assets/parchment_bg.png') center/cover no-repeat; opacity: 0.04; mix-blend-mode: overlay; }
-.subjects-header { text-align: center; margin-bottom: 60px; position: relative; z-index: 2; animation: fadeSlideUp 1s var(--ease-bounce); }
-.subjects-header h1 { font-family: var(--font-display); font-size: 2.8rem; color: var(--gold); text-shadow: 0 0 40px rgba(212,168,71,0.5); letter-spacing: 6px; margin-bottom: 12px; }
-.subjects-header .subtitle { font-family: var(--font-medieval); color: var(--text-secondary); font-size: 1.1rem; letter-spacing: 1px; }
+/* ===== PATH CARD GRID ===== */
+.paths-grid { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 5; max-width: 1200px; padding: 20px; }
 
-.artifacts-row { display: flex; gap: 40px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 5; max-width: 1200px; padding: 20px; }
+.path-card {
+  display: flex; flex-direction: column; align-items: center; cursor: pointer;
+  transition: all 0.5s var(--ease-smooth);
+  animation: pathCardEnter 0.7s var(--ease-bounce) forwards; opacity: 0;
+  position: relative; width: 180px;
+}
+@keyframes pathCardEnter { 0% { opacity: 0; transform: translateY(50px) scale(0.85); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
 
-.artifact-slot { display: flex; flex-direction: column; align-items: center; cursor: pointer; transition: all 0.6s var(--ease-smooth); animation: artifactEnter 0.8s var(--ease-bounce) forwards; opacity: 0; position: relative; width: 180px; }
-@keyframes artifactEnter { 0% { opacity: 0; transform: translateY(40px) scale(0.8); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+.path-card-inner {
+  width: 160px; height: 180px; position: relative;
+  background: linear-gradient(160deg, rgba(26,20,37,0.95), rgba(13,10,20,0.98));
+  border: 2px solid rgba(212,168,71,0.25);
+  border-radius: 20px; display: flex; align-items: center; justify-content: center;
+  overflow: hidden; transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.path-card-inner::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--card-color) 10%, transparent), transparent 70%);
+  opacity: 0.6; transition: opacity 0.5s;
+}
+.path-card-inner::after {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.04) 0%, transparent 40%);
+}
 
-.artifact-slot:hover .artifact-wrapper { transform: translateY(-30px) scale(1.1); }
-.artifact-slot:hover .artifact-glow { opacity: 0.8; transform: scale(1.3); }
-.artifact-slot.fading { opacity: 0; transform: scale(0.5) translateY(20px); pointer-events: none; }
-.artifact-slot.invoking .artifact-wrapper { animation: artifactInvoke 1.2s cubic-bezier(0.19, 1, 0.22, 1) forwards; }
-
-.artifact-wrapper { position: relative; width: 180px; height: 180px; transition: transform 0.6s cubic-bezier(0.19, 1, 0.22, 1); z-index: 2; display: flex; align-items: center; justify-content: center; overflow: visible; }
-.artifact-img { width: 140px; height: 120px; background: url('/assets/artifacts.png') no-repeat; background-size: 350% 250%; transition: filter 0.4s, transform 0.4s; z-index: 5; animation: artifactFloat 4s ease-in-out infinite; margin-top: -30px; }
-
-/* Artifact Slicing - Finely tuned to hide labels and center icons */
-.artifact-mathematics { background-position: 4% 8%; }
-.artifact-chemistry { background-position: 49% 8%; }
-.artifact-physics { background-position: 95% 8%; }
-.artifact-programming { background-position: 49% 75%; }
-.artifact-biology { background-position: 95% 75%; }
-
-.artifact-slot:hover .artifact-img { filter: brightness(1.2) drop-shadow(0 0 40px rgba(212,168,71,0.7)); transform: scale(1.1); }
-
-.artifact-glow { position: absolute; top: 10%; left: 50%; width: 140px; height: 140px; transform: translate(-50%, -10%); background: radial-gradient(circle, rgba(212,168,71,0.5), transparent 70%); border-radius: 50%; opacity: 0.15; transition: all 0.6s; pointer-events: none; z-index: 1; filter: blur(15px); }
-.artifact-particles { position: absolute; top: -20px; left: 50%; width: 10px; height: 10px; pointer-events: none; }
-
-/* Arcane Pedestal Visuals */
-.artifact-pedestal { position: absolute; bottom: 35px; left: 50%; transform: translateX(-50%); width: 110px; height: 35px; border-radius: 50%; z-index: 0; pointer-events: none; }
-.artifact-pedestal::before { content: ''; position: absolute; inset: 0; border: 2px solid rgba(212,168,71,0.3); border-radius: 50%; box-shadow: 0 0 15px rgba(212,168,71,0.2), inset 0 0 10px rgba(212,168,71,0.1); animation: ringRotate 8s linear infinite; }
-.artifact-pedestal::after { content: ''; position: absolute; inset: -4px; border: 1px solid rgba(212,168,71,0.15); border-radius: 50%; animation: ringRotate 5s linear infinite reverse; }
-
+.path-card-icon {
+  font-size: 3.5rem; position: relative; z-index: 2;
+  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--card-color) 60%, transparent));
+  animation: iconFloat 4s ease-in-out infinite;
+  transition: all 0.4s;
+}
+@keyframes iconFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 @keyframes ringRotate { from { transform: rotateX(70deg) rotateZ(0deg); } to { transform: rotateX(70deg) rotateZ(360deg); } }
-@keyframes pedestalPulse { 0%, 100% { opacity: 0.4; transform: scale(1); filter: blur(2px); } 50% { opacity: 0.8; transform: scale(1.1); filter: blur(4px); } }
 
-@keyframes artifactFloat { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-15px) rotate(2deg); } }
-@keyframes artifactInvoke { 0% { transform: translateY(-30px) scale(1.1); filter: brightness(1); } 50% { transform: translateY(-80px) scale(1.4) rotate(15deg); filter: brightness(2) contrast(1.5); } 100% { transform: translateY(-200px) scale(2) rotate(45deg); opacity: 0; filter: brightness(5); } }
+.path-card-ring {
+  position: absolute; width: 120px; height: 120px;
+  border: 1.5px solid color-mix(in srgb, var(--card-color) 30%, transparent);
+  border-radius: 50%; animation: ringRotate 10s linear infinite;
+  opacity: 0.4; transition: all 0.5s;
+}
+.path-card-ring::after {
+  content: ''; position: absolute; inset: -8px;
+  border: 1px dashed color-mix(in srgb, var(--card-color) 15%, transparent);
+  border-radius: 50%; animation: ringRotate 7s linear infinite reverse;
+}
 
-.artifact-label { text-align: center; margin-top: 20px; transition: all 0.4s; }
-.artifact-name { font-family: var(--font-heading); font-size: 1.1rem; color: var(--gold); display: block; letter-spacing: 3px; font-weight: 700; margin-bottom: 4px; }
-.artifact-role { font-family: var(--font-medieval); font-size: 0.85rem; color: var(--text-secondary); opacity: 0.8; }
+.path-card-glow {
+  position: absolute; top: 20%; left: 50%; transform: translateX(-50%);
+  width: 100px; height: 100px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--card-color) 40%, transparent), transparent 70%);
+  border-radius: 50%; filter: blur(25px); opacity: 0.15; transition: all 0.5s;
+  pointer-events: none; z-index: 0;
+}
+
+/* Hover */
+.path-card:hover .path-card-inner {
+  transform: translateY(-16px) scale(1.05);
+  border-color: var(--card-color);
+  box-shadow: 0 16px 50px rgba(0,0,0,0.5), 0 0 40px color-mix(in srgb, var(--card-color) 25%, transparent);
+}
+.path-card:hover .path-card-inner::before { opacity: 1; }
+.path-card:hover .path-card-icon { transform: scale(1.15); filter: drop-shadow(0 0 30px var(--card-color)); }
+.path-card:hover .path-card-ring { opacity: 0.8; width: 130px; height: 130px; border-color: color-mix(in srgb, var(--card-color) 50%, transparent); }
+.path-card:hover .path-card-glow { opacity: 0.4; width: 140px; height: 140px; }
+
+/* Card Info */
+.path-card-info { text-align: center; margin-top: 16px; transition: all 0.4s; }
+.path-card-name { font-family: var(--font-heading); font-size: 1rem; color: var(--gold); display: block; letter-spacing: 3px; font-weight: 700; margin-bottom: 4px; }
+.path-card-role { font-family: var(--font-medieval); font-size: 0.8rem; color: var(--text-secondary); opacity: 0.8; }
+
+/* Fade & Invoke */
+.path-card.fading { opacity: 0; transform: scale(0.5) translateY(20px); pointer-events: none; transition: all 0.8s; }
+.path-card.invoking .path-card-inner {
+  animation: cardInvoke 1.2s cubic-bezier(0.19,1,0.22,1) forwards;
+}
+@keyframes cardInvoke {
+  0% { transform: translateY(-16px) scale(1.05); }
+  50% { transform: translateY(-60px) scale(1.2); filter: brightness(1.8); box-shadow: 0 0 80px var(--card-color); }
+  100% { transform: translateY(-150px) scale(0.6); opacity: 0; filter: brightness(3); }
+}
 
 /* Essentials shortcut */
 .essentials-shortcut { margin-top: 32px; padding: 12px 28px; background: rgba(26,20,37,0.7); border: 1px solid var(--gold-dark); border-radius: 30px; cursor: pointer; font-family: var(--font-heading); font-size: 0.9rem; color: var(--gold); letter-spacing: 2px; transition: all 0.3s var(--ease-bounce); z-index: 5; display: flex; align-items: center; gap: 10px; }
 .essentials-shortcut:hover { transform: scale(1.05); box-shadow: var(--glow-gold); background: rgba(212,168,71,0.1); }
 
-/* Artifact tear overlay */
+/* ===== TEAR TRANSITION ===== */
 .sword-tear-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; }
-.tear-left, .tear-right { position: absolute; top: 0; width: 50%; height: 100%; background: #08060a; transition: transform 1.6s cubic-bezier(0.19, 1, 0.22, 1); filter: url('#displacementFilter'); }
-.tear-left { left: 0; transform-origin: left center; border-right: 1px solid var(--gold); }
-.tear-right { right: 0; transform-origin: right center; border-left: 1px solid var(--gold); }
-.sword-tear-overlay.active .tear-left { transform: translateX(-15%) rotateY(-15deg); box-shadow: 20px 0 100px rgba(0,0,0,0.9); }
-.sword-tear-overlay.active .tear-right { transform: translateX(15%) rotateY(15deg); box-shadow: -20px 0 100px rgba(0,0,0,0.9); }
-.tear-reveal { position: relative; z-index: 1010; opacity: 0; transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1) 0.5s; filter: drop-shadow(0 0 40px rgba(212,168,71,0.6)); pointer-events: none; }
-.sword-tear-overlay.active .tear-reveal { opacity: 1; transform: scale(1.15) translateY(-20px); }
-.tear-reveal h1 { font-family: var(--font-display); font-size: 4.5rem; color: var(--gold); text-shadow: 0 0 40px rgba(212,168,71,0.8), 0 0 80px rgba(212,168,71,0.4); letter-spacing: 15px; text-transform: uppercase; margin: 0; }
-
-/* Blurred world during transition */
-body:has(.sword-tear-overlay.active) #page-container { filter: blur(10px) brightness(0.6); transition: filter 1s var(--ease-smooth); }
+.tear-left, .tear-right { position: absolute; top: 0; width: 50%; height: 100%; background: linear-gradient(180deg, #06040a, #0d0a14); transition: transform 1.6s cubic-bezier(0.19, 1, 0.22, 1); }
+.tear-left { left: 0; transform-origin: left center; border-right: 2px solid var(--gold); box-shadow: 10px 0 60px rgba(212,168,71,0.3); }
+.tear-right { right: 0; transform-origin: right center; border-left: 2px solid var(--gold); box-shadow: -10px 0 60px rgba(212,168,71,0.3); }
+.sword-tear-overlay.active .tear-left { transform: translateX(-12%) rotateY(-8deg); }
+.sword-tear-overlay.active .tear-right { transform: translateX(12%) rotateY(8deg); }
+.tear-reveal { position: relative; z-index: 1010; opacity: 0; transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1) 0.4s; text-align: center; pointer-events: none; }
+.sword-tear-overlay.active .tear-reveal { opacity: 1; transform: scale(1.1); }
+.tear-icon { font-size: 5rem; margin-bottom: 16px; filter: drop-shadow(0 0 40px rgba(212,168,71,0.8)); animation: iconFloat 3s ease-in-out infinite; }
+.tear-reveal h1 {
+  font-family: var(--font-display); font-size: 3.5rem; color: var(--gold);
+  text-shadow: 0 0 30px rgba(212,168,71,0.6), 0 2px 4px rgba(0,0,0,0.9);
+  letter-spacing: 12px; text-transform: uppercase; margin: 0;
+  -webkit-text-stroke: 0.5px rgba(212,168,71,0.8);
+}
+.tear-role {
+  font-family: var(--font-medieval); font-size: 1.1rem; color: var(--parchment);
+  letter-spacing: 4px; margin-top: 8px; opacity: 0.8;
+  text-shadow: 0 0 15px rgba(212,168,71,0.4);
+}
 
 /* Subject intro overlay */
 .subject-intro-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 200; background: rgba(13,10,20,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; animation: fadeIn 0.5s; }
@@ -584,8 +631,13 @@ body:has(.sword-tear-overlay.active) #page-container { filter: blur(10px) bright
   .guide-character-wrapper { flex: 0 0 auto; }
   .guide-character-container { width: 240px; height: 320px; }
   .subjects-header h1 { font-size: 1.8rem; }
-  .swords-row { gap: 20px; }
-  .sword-wrapper { width: 100px; height: 130px; }
+  .paths-grid { gap: 16px; }
+  .path-card { width: 140px; }
+  .path-card-inner { width: 120px; height: 140px; }
+  .path-card-icon { font-size: 2.5rem; }
+  .path-card-ring { width: 90px; height: 90px; }
+  .tear-reveal h1 { font-size: 2rem; letter-spacing: 6px; }
+  .tear-icon { font-size: 3.5rem; }
   .adventure-header { flex-direction: column; gap: 16px; text-align: center; }
   .map-tile { width: 70px; height: 70px; }
   .quiz-panel-with-guide { flex-direction: column; }
