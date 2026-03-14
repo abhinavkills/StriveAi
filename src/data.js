@@ -96,6 +96,14 @@ export const subjectConfig = {
   }
 };
 
+export const defaultSyllabi = {
+  math: "Differential equations, Vector calculus, Partial differential equations, Linear Algebra, Real Analysis",
+  physics: "Vector calculus, Thermodynamics, Mechanics, Electromagnetism, Quantum mechanics, Statistical Mechanics",
+  chemistry: "Thermodynamics, Organic chemistry, Reaction mechanisms, Electrochemistry, Atomic Structure, Periodicity",
+  coding: "C/C++ basics, Control structures, Functions, Arrays, Pointers, Dynamic memory allocation, Data Structures, OOP",
+  biology: "Genetics, Molecular biology, Evolution, Ecology, Cell biology, Human Physiology, Plant Biology"
+};
+
 export const ranks = [
   { name: "Apprentice", xpRequired: 0, icon: "🔰" },
   { name: "Alchemist", xpRequired: 100, icon: "⚗️" },

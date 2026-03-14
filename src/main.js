@@ -23,6 +23,9 @@ const router = new Router('#page-container', '#page-transition');
 router.register('login', (container, data) => renderLoginPage(container, { ...data, router, particles }));
 router.register('intro', (container, data) => renderIntroPage(container, { ...data, router, particles }));
 router.register('subjects', (container, data) => renderSubjectsPage(container, { ...data, router, particles }));
+router.register('syllabus-selection', (container, data) => renderSyllabusSelectionPage(container, { ...data, router, particles }));
+router.register('level-map', (container, data) => renderLevelMapPage(container, { ...data, router, particles }));
+router.register('level-content', (container, data) => renderLevelContentPage(container, { ...data, router, particles }));
 router.register('adventure', (container, data) => renderAdventurePage(container, { ...data, router, particles }));
 router.register('essentials', (container, data) => renderEssentialsPage(container, { ...data, router, particles }));
 

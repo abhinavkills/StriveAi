@@ -1,9 +1,9 @@
 // ==========================================
 // Page Renderers - All page UI generation
 // ==========================================
-import { subjectConfig, quizData, ranks } from './data.js';
+import { subjectConfig, quizData, ranks, defaultSyllabi } from './data.js';
 import { supabase } from './supabase.js';
-
+import { generateGamifiedSyllabus } from './gemini.js';
 
 // Game state
 export const gameState = {
@@ -12,6 +12,9 @@ export const gameState = {
   xp: 0,
   completedTiles: {},
   currentSubject: null,
+  currentSyllabus: null,
+  currentLevelIndex: 0,
+  generatedModules: null,
   tasks: [],
   notes: []
 };
@@ -696,7 +699,7 @@ export function renderSubjectsPage(container, data) {
       card.classList.add('invoking-mastery');
 
       // Special case for essentials
-      const nextPath = (subject === 'essentials') ? 'essentials' : 'adventure';
+      const nextPath = (subject === 'essentials') ? 'essentials' : 'syllabus-selection';
 
       setTimeout(() => {
         const tear = document.getElementById('swordTear');
@@ -732,6 +735,110 @@ export function renderSubjectsPage(container, data) {
   }
 }
 
+// ==========================================
+// 3.5 SYLLABUS SELECTION PAGE
+// ==========================================
+export function renderSyllabusSelectionPage(container, data) {
+  const sub = subjectConfig[gameState.currentSubject];
+  
+  container.innerHTML = `
+    <div class="syllabus-page mastery-hall-layout">
+      <!-- TOP BANNER -->
+      <div class="mastery-banner">
+        <div class="banner-gold-rim"></div>
+        <h1 class="medieval-bold">CHOOSE YOUR SYLLABUS</h1>
+        <p class="subtitle medieval-text">HOW SHALL YOU MASTER ${sub.name.toUpperCase()}?</p>
+      </div>
+
+      <div class="syllabus-options-container">
+        <!-- DEFAULT OPTION -->
+        <div class="syllabus-card quest-card" id="defaultSyllabusBtn">
+          <div class="syllabus-card-icon">📜</div>
+          <h2 class="medieval-bold">Default Syllabus</h2>
+          <p class="medieval-text">Master the academy's traditional curriculum for ${sub.name}.</p>
+          <div class="syllabus-card-btn">SELECT PATH</div>
+        </div>
+
+        <!-- CUSTOM OPTION -->
+        <div class="syllabus-card quest-card" id="customSyllabusBtn">
+          <div class="syllabus-card-icon">🖋️</div>
+          <h2 class="medieval-bold">Custom Syllabus</h2>
+          <p class="medieval-text">Upload or paste your own scrolls to forge a unique path.</p>
+          <div class="syllabus-card-btn">FORGE PATH</div>
+        </div>
+      </div>
+
+      <!-- CUSTOM INPUT OVERLAY (Hidden by default) -->
+      <div class="custom-syllabus-overlay" id="customOverlay" style="display:none">
+        <div class="custom-overlay-content">
+          <h2 class="medieval-bold">UNFOLD YOUR SCROLLS</h2>
+          <textarea id="syllabusInput" placeholder="Paste your syllabus text here..."></textarea>
+          <div class="custom-overlay-actions">
+             <button class="cancel-btn medieval-bold" id="cancelCustom">CANCEL</button>
+             <button class="invoke-btn medieval-bold" id="invokeCustom">INVOKE</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- LOADING OVERLAY -->
+      <div class="ai-loading-overlay" id="aiLoading" style="display:none">
+        <div class="loading-content">
+          <div class="loading-gem"></div>
+          <h2 class="medieval-bold">GEMINI IS FORGING YOUR JOURNEY...</h2>
+          <p class="medieval-text" id="loadingTip">Dividing the arcane knowledge into progressive levels...</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('defaultSyllabusBtn').addEventListener('click', () => {
+    processSyllabus(defaultSyllabi[gameState.currentSubject] || "General introduction to " + sub.name);
+  });
+
+  document.getElementById('customSyllabusBtn').addEventListener('click', () => {
+    document.getElementById('customOverlay').style.display = 'flex';
+  });
+
+  document.getElementById('cancelCustom').addEventListener('click', () => {
+    document.getElementById('customOverlay').style.display = 'none';
+  });
+
+  document.getElementById('invokeCustom').addEventListener('click', () => {
+    const text = document.getElementById('syllabusInput').value.trim();
+    if (!text) { alert("Please provide your syllabus text!"); return; }
+    processSyllabus(text);
+  });
+
+  async function processSyllabus(text) {
+    document.getElementById('aiLoading').style.display = 'flex';
+    document.getElementById('customOverlay').style.display = 'none';
+    
+    gameState.currentSyllabus = text;
+    
+    // Generate gamified modules with Gemini
+    const result = await generateGamifiedSyllabus(text, sub.name);
+    
+    if (result && result.levels) {
+      gameState.generatedModules = result.levels;
+      gameState.currentLevelIndex = 0;
+      
+      // Save initial progress for this subject if not exists
+      await saveProgressDB(gameState.currentSubject, 0); 
+      
+      setTimeout(() => {
+        if (data.router) data.router.navigate('level-map', { router: data.router, particles: data.particles });
+      }, 1000);
+    } else {
+      alert("The arcane AI failed to forge your path. Please try again later.");
+      document.getElementById('aiLoading').style.display = 'none';
+    }
+  }
+
+  if (data.particles) {
+    data.particles.start(30, { color: 'rgba(212, 168, 71, 0.3)', maxSize: 2, speed: 0.3 });
+  }
+}
+
 function showSubjectIntro(subject, sub, data) {
   const overlay = document.getElementById('subjectIntro');
   const guideImg = document.getElementById('introGuideImg');
@@ -762,199 +869,233 @@ function showSubjectIntro(subject, sub, data) {
 }
 
 // ==========================================
-// 4. ADVENTURE MAP PAGE
+// 4. LEVEL MAP PAGE
 // ==========================================
-export function renderAdventurePage(container, data) {
-  const subject = data.subject || gameState.currentSubject || 'math';
-  const sub = subjectConfig[subject];
-  const rank = getRank(gameState.xp);
-  const xpPercent = Math.min(100, (gameState.xp % 100));
-  const completedArr = gameState.completedTiles[subject] || [];
-
-  const tileCount = 5;
-  const tilesHtml = [];
-  for (let i = 1; i <= tileCount; i++) {
+export function renderLevelMapPage(container, data) {
+  const levels = gameState.generatedModules || [];
+  const sub = subjectConfig[gameState.currentSubject];
+  
+  // Calculate character position based on progress
+  const completedArr = gameState.completedTiles[gameState.currentSubject] || [];
+  const completedCount = completedArr.length;
+  
+  const mapHtml = levels.map((lvl, i) => {
+    const isLocked = i > completedCount;
     const isCompleted = completedArr.includes(i);
-    const isLocked = i > 1 && !completedArr.includes(i - 1) && i > completedArr.length + 1;
-    const cls = isCompleted ? 'completed' : (isLocked ? 'locked' : '');
-    const labels = ['Basics', 'Challenge', 'Advanced', 'Expert', 'Final Boss'];
-    tilesHtml.push(`
-      <div class="map-tile ${cls}" data-tile="${i}" style="animation-delay:${i * 0.15}s">
-        <span class="tile-num">${i}</span>
-        <span class="tile-label">${labels[i - 1]}</span>
-      </div>
-    `);
-    if (i < tileCount) tilesHtml.push('<div class="map-path"></div>');
-  }
-
-  container.innerHTML = `
-    <div class="adventure-page">
-      <div class="adventure-bg"></div>
-      <div class="adventure-overlay"></div>
-      <div class="adventure-header">
-        <button class="adventure-back-btn" id="adventureBack">◄ RETREAT</button>
-        <h1 class="adventure-title">${sub.icon} ${sub.name} Realm</h1>
-        <div class="player-stats">
-          <div class="stat-item">
-            <span class="stat-icon">⚡</span>
-            <span>${gameState.xp} XP</span>
-            <div class="xp-bar-container"><div class="xp-bar-fill" style="width:${xpPercent}%"></div></div>
-          </div>
-          <div class="rank-badge">${rank.icon} ${rank.name}</div>
+    const isCurrent = i === completedCount;
+    
+    return `
+      <div class="map-tile-wrapper" style="--tile-idx:${i}">
+        <div class="map-tile ${isLocked ? 'locked' : ''} ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''}" 
+             data-index="${i}">
+          <div class="tile-number medieval-bold">${i + 1}</div>
+          <div class="tile-glow"></div>
+          ${isCurrent ? '<div class="map-player-pointer">⚔️</div>' : ''}
+        </div>
+        <div class="tile-label-box">
+          <span class="medieval-text">${lvl.title}</span>
         </div>
       </div>
-      <div class="map-container"><div class="map-row">${tilesHtml.join('')}</div></div>
-      <div class="guide-mini" id="guideMini">
-        <div class="guide-mini-bubble">Tap a quest tile to start a challenge! 🗡️</div>
-        <img src="/assets/expr_neutral_happy.jpeg" class="guide-mini-img" style="object-position:0% center" alt="${gameState.guideName || 'Guide'}" />
+    `;
+  }).join('');
+
+  container.innerHTML = `
+    <div class="map-page mastery-hall-layout">
+       <div class="mastery-banner">
+        <div class="banner-gold-rim"></div>
+        <h1 class="medieval-bold">${sub.name.toUpperCase()} REALM</h1>
+        <p class="subtitle medieval-text">ASCEND THROUGH THE DIVINE STAGES OF MASTERY</p>
       </div>
+
+      <div class="map-scroll-view">
+        <div class="map-path-container">
+          <div class="map-tiles-grid">
+            ${mapHtml}
+          </div>
+        </div>
+      </div>
+
+      <div class="mastery-companion">
+        <div class="comp-bubble">
+           <p class="medieval-text" id="mapGuideText"></p>
+        </div>
+        <div class="comp-avatar">
+          <img src="/assets/expr_neutral_happy.jpeg" id="mapGuideImg" alt="Guide">
+        </div>
+      </div>
+      
+      <button class="back-to-hall medieval-bold" id="backToHall">↩ RETREAT TO HALL</button>
     </div>
   `;
 
-  document.getElementById('adventureBack').addEventListener('click', () => {
-    if (data.router) data.router.navigate('subjects', { router: data.router, particles: data.particles });
-  });
+  const guideText = document.getElementById('mapGuideText');
+  const introMsg = completedCount === 0 
+    ? "Look at all this unexplored land! Don't just stand there, pick the first level already."
+    : "You're making decent progress... for a mere apprentice. Onward!";
+  
+  typewriterVN(guideText, introMsg, 30);
 
-  container.querySelectorAll('.map-tile:not(.locked)').forEach(tile => {
+  container.querySelectorAll('.map-tile').forEach(tile => {
     tile.addEventListener('click', () => {
-      const tileNum = parseInt(tile.dataset.tile);
-      tile.style.transform = 'scale(0.9)';
-      setTimeout(() => { tile.style.transform = ''; }, 150);
-      setTimeout(() => { openQuiz(subject, tileNum, data); }, 300);
+      const idx = parseInt(tile.dataset.index);
+      if (idx > completedCount) {
+        typewriterVN(guideText, "Hey! You haven't unlocked that yet. Stick to the path!", 25);
+        return;
+      }
+      gameState.currentLevelIndex = idx;
+      if (data.router) data.router.navigate('level-content', { router: data.router, particles: data.particles });
     });
   });
 
+  document.getElementById('backToHall').addEventListener('click', () => {
+    if (data.router) data.router.navigate('subjects', { router: data.router, particles: data.particles });
+  });
+
   if (data.particles) {
-    data.particles.start(20, { color: 'rgba(212, 168, 71, 0.4)', maxSize: 2.5, speed: 0.3 });
+    data.particles.start(25, { color: sub.color, maxSize: 3, speed: 0.15 });
   }
 }
 
 // ==========================================
 // QUIZ SYSTEM - with guide expressions
 // ==========================================
-function openQuiz(subject, tileNum, data) {
-  const questions = quizData[subject] || quizData.math;
-  const question = questions[(tileNum - 1) % questions.length];
-  let answered = false;
-  let thinkingTimer = null;
+// ==========================================
+// 5. LEVEL CONTENT PAGE (Study + Quiz)
+// ==========================================
+export function renderLevelContentPage(container, data) {
+  const level = gameState.generatedModules[gameState.currentLevelIndex];
+  const sub = subjectConfig[gameState.currentSubject];
+  
+  container.innerHTML = `
+    <div class="content-page mastery-hall-layout">
+      <div class="content-split-view">
+        <!-- LEFT: STUDY MATERIAL -->
+        <div class="study-panel">
+          <div class="study-header">
+            <h1 class="medieval-bold">${level.title.toUpperCase()}</h1>
+            <div class="study-badge medieval-text">LVL ${gameState.currentLevelIndex + 1}</div>
+          </div>
+          <div class="study-body scroll-beautify">
+             <div class="study-section">
+               <h3 class="medieval-bold">The Arcane Theory</h3>
+               <p class="medieval-text">${level.explanation}</p>
+             </div>
+             <div class="study-section">
+               <h3 class="medieval-bold">Practical Echoes</h3>
+               <ul>
+                 ${level.examples.map(ex => `<li class="medieval-text">${ex}</li>`).join('')}
+               </ul>
+             </div>
+             <div class="study-summary">
+                <p class="medieval-text"><em>Summary: ${level.summary}</em></p>
+             </div>
+          </div>
+        </div>
 
-  const overlay = document.createElement('div');
-  overlay.className = 'quiz-overlay';
-  overlay.innerHTML = `
-    <div class="quiz-panel-with-guide">
-      <div class="quiz-guide-section">
-        <div class="quiz-guide-char">
-          <img src="${expressions.neutral.src}" class="quiz-guide-img" id="quizGuideImg"
-            style="object-position:${expressions.neutral.pos}" alt="Guide" />
-        </div>
-        <div class="quiz-guide-dialogue" id="quizDialogue">
-          <p id="quizGuideText">Let me see... Here's your challenge!</p>
-        </div>
-      </div>
-      <div class="quiz-panel">
-        <div class="quiz-header">
-          <h2>⚔️ QUEST ${tileNum} — ${subjectConfig[subject]?.name || 'Challenge'}</h2>
-          <button class="quiz-close-btn" id="quizClose">✕</button>
-        </div>
-        <div class="quiz-progress">
-          <div class="quiz-progress-bar">
-            <div class="quiz-progress-fill" style="width:${(tileNum / 5) * 100}%"></div>
-          </div>
-          <span class="quiz-progress-text">${tileNum} / 5</span>
-        </div>
-        <div class="quiz-content">
-          <div class="quiz-question">${question.q}</div>
-          <div class="quiz-options">
-            ${question.options.map((opt, i) => `
-              <div class="quiz-option" data-index="${i}">
-                <span class="option-letter">${String.fromCharCode(65 + i)}</span>
-                <span>${opt}</span>
+        <!-- RIGHT: CHALLENGES & COMPANION -->
+        <div class="challenge-panel">
+           <div class="challenge-companion">
+              <div class="comp-bubble">
+                <p id="levelGuideText" class="medieval-text"></p>
               </div>
-            `).join('')}
-          </div>
+              <div class="comp-avatar">
+                <img src="/assets/expr_neutral_happy.jpeg" id="levelGuideImg" alt="Guide">
+              </div>
+           </div>
+
+           <div class="quiz-container" id="quizContainer">
+              <h2 class="medieval-bold">ARE YOU PREPARED?</h2>
+              <p class="medieval-text">Answer the runes to proceed.</p>
+              <button class="begin-quiz-btn medieval-bold" id="startQuiz">BEGIN CHALLENGE</button>
+           </div>
         </div>
       </div>
+      
+      <button class="back-to-map medieval-bold" id="backToMap">⏪ MAP</button>
     </div>
   `;
 
-  document.body.appendChild(overlay);
+  const guideText = document.getElementById('levelGuideText');
+  const levelIntro = `Level ${gameState.currentLevelIndex + 1}: ${level.title}. Read the theory on the left, then face my challenge!`;
+  typewriterVN(guideText, levelIntro, 30);
 
-  const guideImg = overlay.querySelector('#quizGuideImg');
-  const guideText = overlay.querySelector('#quizGuideText');
+  document.getElementById('startQuiz').addEventListener('click', () => {
+    runQuiz(level.questions, guideText);
+  });
 
-  function setQuizExpression(expr) {
-    const e = expressions[expr] || expressions.neutral;
-    guideImg.src = e.src;
-    guideImg.style.objectPosition = e.pos;
+  function runQuiz(questions, guideEl) {
+    let qIdx = 0;
+    const quizBox = document.getElementById('quizContainer');
+    
+    function showQuestion() {
+      if (qIdx >= questions.length) {
+        finishLevel();
+        return;
+      }
+      const q = questions[qIdx];
+      quizBox.innerHTML = `
+        <div class="quiz-header">
+          <span class="q-count medieval-bold">QUESTION ${qIdx + 1}/${questions.length}</span>
+        </div>
+        <div class="quiz-q medieval-text">${q.q}</div>
+        <div class="quiz-options">
+          ${q.options.map((opt, i) => `
+            <button class="quiz-opt-btn medieval-text" data-idx="${i}">${opt}</button>
+          `).join('')}
+        </div>
+      `;
+      
+      quizBox.querySelectorAll('.quiz-opt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const choice = parseInt(btn.dataset.idx);
+          if (choice === q.correct) {
+            btn.classList.add('correct');
+            typewriterVN(guideEl, "Hmph. Not bad. You actually paid attention.", 20);
+            setTimeout(() => { qIdx++; showQuestion(); }, 1500);
+          } else {
+            btn.classList.add('wrong');
+            typewriterVN(guideEl, "Wrong! Did you even read the scrolls? Try again!", 20);
+            setTimeout(() => { btn.classList.remove('wrong'); }, 1000);
+          }
+        });
+      });
+    }
+    showQuestion();
   }
 
-  // Thinking timer - rotate dialogues
-  let thinkCount = 0;
-  thinkingTimer = setInterval(() => {
-    if (answered) { clearInterval(thinkingTimer); return; }
-    thinkCount++;
-    if (thinkCount >= 2) {
-      const msgs = thinkingDialogues;
-      const exprs = ['concerned', 'neutralSad', 'pouty'];
-      setQuizExpression(randomFrom(exprs));
-      guideText.textContent = randomFrom(msgs);
+  async function finishLevel() {
+    gameState.xp += 25;
+    if (!gameState.completedTiles[gameState.currentSubject]) gameState.completedTiles[gameState.currentSubject] = [];
+    if (!gameState.completedTiles[gameState.currentSubject].includes(gameState.currentLevelIndex)) {
+       gameState.completedTiles[gameState.currentSubject].push(gameState.currentLevelIndex);
+       await saveProgressDB(gameState.currentSubject, gameState.currentLevelIndex);
     }
-  }, 8000);
+    await saveProfileUpdate();
 
-  // Close
-  overlay.querySelector('#quizClose').addEventListener('click', () => {
-    clearInterval(thinkingTimer);
-    overlay.style.animation = 'fadeIn 0.3s reverse forwards';
-    setTimeout(() => overlay.remove(), 300);
-  });
-
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) {
-      clearInterval(thinkingTimer);
-      overlay.style.animation = 'fadeIn 0.3s reverse forwards';
-      setTimeout(() => overlay.remove(), 300);
-    }
-  });
-
-  // Options
-  overlay.querySelectorAll('.quiz-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-      if (answered) return;
-      answered = true;
-      clearInterval(thinkingTimer);
-      const idx = parseInt(opt.dataset.index);
-
-      if (idx === question.correct) {
-        opt.classList.add('correct');
-        setQuizExpression('happy');
-        guideText.textContent = randomFrom(correctDialogues);
-        gameState.xp += 25;
-
-        if (!gameState.completedTiles[subject]) gameState.completedTiles[subject] = [];
-        if (!gameState.completedTiles[subject].includes(tileNum)) {
-          gameState.completedTiles[subject].push(tileNum);
-        }
-        
-        showXPReward(25);
-        
-        // Sync to Supabase
-        saveProfileUpdate(); 
-        saveProgressDB(subject, tileNum);
-
-        setTimeout(() => {
-          overlay.remove();
-          if (data.router) data.router.navigate('adventure', { router: data.router, particles: data.particles, subject, force: true });
-        }, 2000);
-      } else {
-        opt.classList.add('incorrect');
-        overlay.querySelectorAll('.quiz-option')[question.correct].classList.add('correct');
-        setQuizExpression('concerned');
-        guideText.textContent = randomFrom(incorrectDialogues);
-
-        setTimeout(() => overlay.remove(), 2500);
-      }
+    const quizBox = document.getElementById('quizContainer');
+    quizBox.innerHTML = `
+      <div class="level-complete-reveal">
+         <div class="complete-icon">🌟</div>
+         <h2 class="medieval-bold">LEVEL COMPLETE</h2>
+         <p class="medieval-text">+25 XP AWARDED</p>
+         <button class="continue-path-btn medieval-bold" id="finishBackToMap">CONTINUE QUEST</button>
+      </div>
+    `;
+    
+    typewriterVN(guideText, "You finished it. I guess you're slightly less hopeless than I thought. Don't let it go to your head!", 25);
+    
+    document.getElementById('finishBackToMap').addEventListener('click', () => {
+      if (data.router) data.router.navigate('level-map', { router: data.router, particles: data.particles });
     });
+  }
+
+  document.getElementById('backToMap').addEventListener('click', () => {
+    if (data.router) data.router.navigate('level-map', { router: data.router, particles: data.particles });
   });
+
+  if (data.particles) {
+    data.particles.start(20, { color: 'rgba(255, 255, 255, 0.2)', maxSize: 2, speed: 0.1 });
+  }
 }
 
 function showXPReward(amount) {
