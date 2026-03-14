@@ -514,7 +514,7 @@ export function renderSubjectsPage(container, data) {
   const essentials = subjectConfig.essentials;
 
   const cardsHtml = subjects.map(([key, sub], i) => `
-    <div class="path-card" data-subject="${key}" style="animation-delay:${i * 0.12}s; --card-color:${sub.color}">
+    <div class="path-card orbit-card" data-subject="${key}" style="animation-delay:${i * 0.12}s; --card-color:${sub.color}; --index:${i}">
       <div class="path-card-glow"></div>
       <div class="path-card-inner">
         <div class="path-card-icon">${sub.icon}</div>
@@ -529,15 +529,32 @@ export function renderSubjectsPage(container, data) {
 
   container.innerHTML = `
     <div class="subjects-page artifact-select-page">
-      <div class="subjects-header">
+      <div class="subjects-bg-overlay"></div>
+      <div class="subjects-header center-text">
         <h1>Invoke Your Path</h1>
-        <p class="subtitle">Choose a domain to begin your mastery — each holds ancient power</p>
+        <p class="subtitle">Choose a domain to begin your mastery — orbiting the ancient halls of knowledge</p>
       </div>
-      <div class="paths-grid" id="pathsGrid">${cardsHtml}</div>
-      <div class="essentials-shortcut" id="essShortcut">
-        <span>📜</span>
-        <span>${essentials.name} — ${essentials.role}</span>
+
+      <div class="circular-layout-container">
+        <!-- Floating Centerpiece -->
+        <div class="path-card center-card" id="essShortcut" style="--card-color:${essentials.color}">
+          <div class="path-card-glow"></div>
+          <div class="path-card-inner">
+            <div class="path-card-icon">📜</div>
+            <div class="path-card-ring"></div>
+          </div>
+          <div class="path-card-info">
+            <span class="path-card-name">${essentials.name}</span>
+            <span class="path-card-role">${essentials.role}</span>
+          </div>
+        </div>
+
+        <!-- Rotating Orbiters -->
+        <div class="orbit-wrap" id="pathsGrid">
+          ${cardsHtml}
+        </div>
       </div>
+
       <div class="guide-mini" id="guideMini">
         <div class="guide-mini-bubble">${randomFrom([
           `Select your discipline, ${gameState.playerName || 'adventurer'}! Each path holds ancient power~ ✨`,
@@ -546,6 +563,7 @@ export function renderSubjectsPage(container, data) {
         ])}</div>
         <img src="/assets/expr_neutral_happy.jpeg" class="guide-mini-img" style="object-position:0% center" alt="Guide" />
       </div>
+
       <div class="subject-intro-overlay" id="subjectIntro" style="display:none">
         <div class="subject-intro-panel">
           <div class="guide-intro-char">
@@ -557,6 +575,7 @@ export function renderSubjectsPage(container, data) {
           </div>
         </div>
       </div>
+
       <div class="sword-tear-overlay" id="swordTear" style="display:none">
         <div class="tear-left"></div>
         <div class="tear-right"></div>

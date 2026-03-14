@@ -416,28 +416,94 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 .continue-btn.visible { opacity: 1; transform: translateY(0); transition: all 0.6s var(--ease-bounce); }
 .continue-btn:hover { transform: translateY(-4px) scale(1.05); box-shadow: 0 8px 30px rgba(107,47,160,0.4), var(--glow-gold); }
 
-/* ===== PATH CARD GRID ===== */
-.paths-grid { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; position: relative; z-index: 5; max-width: 1200px; padding: 20px; }
+/* ===== PATH CARD CIRCULAR LAYOUT ===== */
+.artifact-select-page {
+  background: #0d0a14 url('/assets/fantasy_castle_bg.png') center/cover no-repeat;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 80px;
+}
+.subjects-bg-overlay {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at center, rgba(13,10,20,0.2) 0%, rgba(13,10,20,0.7) 60%, #0d0a14 100%);
+  z-index: 1;
+}
+
+.center-text { text-align: center; }
+.subjects-header { position: relative; z-index: 10; padding: 40px 20px 20px; }
+.subjects-header h1 { 
+  font-family: var(--font-display); font-size: 3rem; color: var(--gold-light);
+  text-shadow: 0 0 30px rgba(212,168,71,0.6), 0 2px 10px rgba(0,0,0,0.8);
+  letter-spacing: 8px; margin-bottom: 12px;
+}
+.subjects-header .subtitle {
+  font-family: var(--font-medieval); font-size: 1.1rem; color: var(--parchment);
+  opacity: 0.9; letter-spacing: 2px;
+}
+
+.circular-layout-container {
+  position: relative;
+  width: 100%;
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  perspective: 1200px;
+}
 
 .path-card {
   display: flex; flex-direction: column; align-items: center; cursor: pointer;
   transition: all 0.5s var(--ease-smooth);
-  animation: pathCardEnter 0.7s var(--ease-bounce) forwards; opacity: 0;
   position: relative; width: 180px;
 }
-@keyframes pathCardEnter { 0% { opacity: 0; transform: translateY(50px) scale(0.85); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+
+.center-card {
+  z-index: 20;
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 40px rgba(212,168,71,0.4));
+  animation: centerPulse 4s ease-in-out infinite;
+}
+@keyframes centerPulse {
+  0%, 100% { transform: scale(1.15) translateY(0); }
+  50% { transform: scale(1.2) translateY(-10px); }
+}
+
+.orbit-wrap {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.orbit-card {
+  position: absolute;
+  top: 50%; left: 50%;
+  pointer-events: auto;
+  --radius: 280px;
+  --angle: calc(var(--index) * (360deg / 5));
+  
+  transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(-1 * var(--radius))) rotate(calc(-1 * var(--angle)));
+  
+  animation: pathCardEnter 0.8s var(--ease-bounce) forwards;
+  animation-delay: calc(var(--index) * 0.15s + 0.5s);
+  opacity: 0;
+}
+@keyframes pathCardEnter { 0% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) rotate(calc(-1 * var(--angle))) scale(0.5); } 100% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(-1 * var(--radius))) rotate(calc(-1 * var(--angle))) scale(1); } }
 
 .path-card-inner {
-  width: 160px; height: 180px; position: relative;
-  background: linear-gradient(160deg, rgba(26,20,37,0.95), rgba(13,10,20,0.98));
+  width: 150px; height: 170px; position: relative;
+  background: linear-gradient(160deg, rgba(30,25,50,0.95), rgba(15,12,25,0.98));
   border: 2px solid rgba(212,168,71,0.25);
   border-radius: 20px; display: flex; align-items: center; justify-content: center;
   overflow: hidden; transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.05);
 }
 .path-card-inner::before {
   content: ''; position: absolute; inset: 0;
-  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--card-color) 10%, transparent), transparent 70%);
+  background: radial-gradient(circle at 50% 40%, color-mix(in srgb, var(--card-color) 15%, transparent), transparent 70%);
   opacity: 0.6; transition: opacity 0.5s;
 }
 .path-card-inner::after {
@@ -477,12 +543,12 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 
 /* Hover */
 .path-card:hover .path-card-inner {
-  transform: translateY(-16px) scale(1.05);
+  transform: scale(1.08);
   border-color: var(--card-color);
   box-shadow: 0 16px 50px rgba(0,0,0,0.5), 0 0 40px color-mix(in srgb, var(--card-color) 25%, transparent);
 }
 .path-card:hover .path-card-inner::before { opacity: 1; }
-.path-card:hover .path-card-icon { transform: scale(1.15); filter: drop-shadow(0 0 30px var(--card-color)); }
+.path-card:hover .path-card-icon { transform: scale(1.1); filter: drop-shadow(0 0 30px var(--card-color)); }
 .path-card:hover .path-card-ring { opacity: 0.8; width: 130px; height: 130px; border-color: color-mix(in srgb, var(--card-color) 50%, transparent); }
 .path-card:hover .path-card-glow { opacity: 0.4; width: 140px; height: 140px; }
 
@@ -491,20 +557,27 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 .path-card-name { font-family: var(--font-heading); font-size: 1rem; color: var(--gold); display: block; letter-spacing: 3px; font-weight: 700; margin-bottom: 4px; }
 .path-card-role { font-family: var(--font-medieval); font-size: 0.8rem; color: var(--text-secondary); opacity: 0.8; }
 
+/* Redefine card colors */
+.path-card[style*="Math"] { --card-color: #ffd700; }
+.path-card[style*="Science"] { --card-color: #00e5ff; }
+.path-card[style*="History"] { --card-color: #ff5252; }
+.path-card[style*="English"] { --card-color: #76ff03; }
+
+#essShortcut .path-card-inner {
+  background: linear-gradient(160deg, rgba(60,45,20,0.95), rgba(30,20,10,0.98));
+  border-color: var(--gold);
+}
+
 /* Fade & Invoke */
-.path-card.fading { opacity: 0; transform: scale(0.5) translateY(20px); pointer-events: none; transition: all 0.8s; }
+.path-card.fading { opacity: 0; transform: scale(0.5); pointer-events: none; transition: all 0.8s; }
 .path-card.invoking .path-card-inner {
   animation: cardInvoke 1.2s cubic-bezier(0.19,1,0.22,1) forwards;
 }
 @keyframes cardInvoke {
-  0% { transform: translateY(-16px) scale(1.05); }
+  0% { transform: scale(1.08); }
   50% { transform: translateY(-60px) scale(1.2); filter: brightness(1.8); box-shadow: 0 0 80px var(--card-color); }
   100% { transform: translateY(-150px) scale(0.6); opacity: 0; filter: brightness(3); }
 }
-
-/* Essentials shortcut */
-.essentials-shortcut { margin-top: 32px; padding: 12px 28px; background: rgba(26,20,37,0.7); border: 1px solid var(--gold-dark); border-radius: 30px; cursor: pointer; font-family: var(--font-heading); font-size: 0.9rem; color: var(--gold); letter-spacing: 2px; transition: all 0.3s var(--ease-bounce); z-index: 5; display: flex; align-items: center; gap: 10px; }
-.essentials-shortcut:hover { transform: scale(1.05); box-shadow: var(--glow-gold); background: rgba(212,168,71,0.1); }
 
 /* ===== TEAR TRANSITION ===== */
 .sword-tear-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; display: flex; align-items: center; justify-content: center; pointer-events: none; }
@@ -653,14 +726,38 @@ body { font-family: var(--font-body); background: var(--bg-dark); color: var(--t
 .tool-content::-webkit-scrollbar-thumb { background: var(--gold-dark); border-radius: 3px; }
 
 
+.circular-layout-container::before {
+  content: '';
+  position: absolute; width: 450px; height: 450px;
+  border: 1px dashed rgba(212,168,71,0.15);
+  border-radius: 50%;
+  animation: orbitRotate 120s linear infinite;
+  z-index: 0;
+}
+.circular-layout-container::after {
+  content: '';
+  position: absolute; width: 520px; height: 520px;
+  border: 1px solid rgba(212,168,71,0.05);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+@keyframes orbitRotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .circular-layout-container { transform: scale(0.85); height: 500px; }
+  .orbit-card { --radius: 220px; }
+}
+
 @media (max-width: 768px) {
   .intro-content { flex-direction: column; gap: 30px; }
   .guide-character-wrapper { flex: 0 0 auto; }
   .guide-character-container { width: 240px; height: 320px; }
-  .subjects-header h1 { font-size: 1.8rem; }
-  .paths-grid { gap: 16px; }
-  .path-card { width: 140px; }
+  .subjects-header h1 { font-size: 2.2rem; }
+  .circular-layout-container { transform: scale(0.6); height: 400px; }
+  .orbit-card { --radius: 200px; }
+  .path-card { width: 130px; }
   .path-card-inner { width: 120px; height: 140px; }
   .path-card-icon { font-size: 2.5rem; }
   .path-card-ring { width: 90px; height: 90px; }
