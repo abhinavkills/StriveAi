@@ -3,10 +3,10 @@
  * Handles communication with Google's Generative AI for dynamic level generation.
  */
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${GEMINI_API_KEY}`;
-
 export async function generateGamifiedSyllabus(syllabusText, subjectName) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
   const prompt = `
     Convert the following syllabus for the subject "${subjectName}" into a gamified study module. 
     Divide the syllabus into exactly 5 progressive learning levels.
@@ -39,37 +39,52 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
     }
   `;
 
-  if (!GEMINI_API_KEY) {
-    console.error("Gemini API Key is missing! Forge failed.");
+  if (!apiKey) {
+    console.error("FORGE ERROR: VITE_GEMINI_API_KEY is missing in your environment!");
     return null;
   }
 
   try {
-    const response = await fetch(GEMINI_URL, {
+    const response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-            response_mime_type: "application/json",
+          response_mime_type: "application/json",
+          temperature: 0.7
         }
       })
     });
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
-      throw new Error(`Gemini API Error: ${response.status} ${errData.error?.message || response.statusText}`);
+      const msg = errData.error?.message || response.statusText;
+      console.error(`FORGE API ERROR (${response.status}): ${msg}`);
+      return { success: false, error: msg };
     }
     
     const data = await response.json();
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      console.error("FORGE ERROR: Invalid API response structure", data);
+      return { success: false, error: "Invalid response from AI" };
+    }
+
     let resultText = data.candidates[0].content.parts[0].text;
     
-    // Clean up potential markdown blocks if they slipped through
+    // Clean up potential markdown blocks
     resultText = resultText.replace(/```json/g, "").replace(/```/g, "").trim();
     
-    return JSON.parse(resultText);
+    try {
+      const parsed = JSON.parse(resultText);
+      return { success: true, levels: parsed.levels || parsed };
+    } catch (e) {
+      console.error("FORGE PARSE ERROR:", e, resultText);
+      return { success: false, error: "Failed to parse AI response" };
+    }
   } catch (error) {
-    console.error("Error generating syllabus:", error);
-    return null;
+    console.error("FORGE CATASTROPHE:", error);
+    return { success: false, error: error.message };
   }
 }

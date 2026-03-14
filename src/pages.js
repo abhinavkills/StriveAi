@@ -118,6 +118,7 @@ function getRank(xp) {
 // We use CSS object-position to crop to a specific expression
 const expressions = {
   neutral:      { src: '/assets/expr_neutral_happy.jpeg', pos: '0% center' },
+  neutralSad:   { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },
   thinking:     { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },
   happy:        { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
   smug:         { src: '/assets/expr_neutral_happy.jpeg', pos: '100% center' },
@@ -129,9 +130,9 @@ const expressions = {
   annoyed:      { src: '/assets/expr_angry.jpeg', pos: '50% center' },
   tsundere:     { src: '/assets/expr_angry.jpeg', pos: '100% center' },
   determined:   { src: '/assets/expr_angry.jpeg', pos: '0% center' },
-  crying:       { src: '/assets/expr_concerned.jpeg', pos: '100% center' }, // Replaced cry with awkward
-  embarrassed:  { src: '/assets/expr_concerned.jpeg', pos: '100% center' }, // Replaced cry with awkward
-  teasing:      { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' },  // Replaced cry with thinking
+  crying:       { src: '/assets/expr_concerned.jpeg', pos: '100% center' }, 
+  embarrassed:  { src: '/assets/expr_concerned.jpeg', pos: '100% center' },
+  teasing:      { src: '/assets/expr_neutral_happy.jpeg', pos: '50% center' }, 
 };
 
 // Dialogue pools
@@ -446,9 +447,9 @@ export function renderIntroPage(container, data) {
     <div class="intro-page">
       <div class="intro-content">
         <div class="guide-character-wrapper">
-          <div class="guide-character-sprite-box" id="guideContainer">
-            <div class="guide-sprite-layer layer-back" id="guideSpriteBack"></div>
-            <div class="guide-sprite-layer layer-front" id="guideSpriteFront"></div>
+          <div class="guide-character-container" id="guideContainer">
+            <img src="/assets/expr_neutral_happy.jpeg" class="guide-character-img" id="guideImg" alt="Your Guide"
+              style="object-position: 0% center" />
           </div>
           <div class="guide-glow"></div>
         </div>
@@ -469,8 +470,7 @@ export function renderIntroPage(container, data) {
     </div>
   `;
 
-  const spriteFront = document.getElementById('guideSpriteFront');
-  const spriteBack = document.getElementById('guideSpriteBack');
+  const guideImg = document.getElementById('guideImg');
   const textEl = document.getElementById('introText');
 
   // Preload expressions to avoid glitching
@@ -481,154 +481,45 @@ export function renderIntroPage(container, data) {
 
   function setExpression(expr) {
     const e = expressions[expr] || expressions.neutral;
-    const style = `background-image: url('${e.src}'); background-position: ${e.pos};`;
-    
-    // Cross-fade logic
-    spriteBack.style.cssText = spriteFront.style.cssText;
-    spriteBack.style.opacity = '1';
-    
-    spriteFront.style.opacity = '0';
-    setTimeout(() => {
-      spriteFront.style.cssText = style + ' opacity: 1;';
-    }, 50);
+    guideImg.src = e.src;
+    guideImg.style.objectPosition = e.pos;
   }
 
   const username = gameState.playerName || 'adventurer';
   const introSteps = [
-    { expr: 'curious', text: `So you're ${username}…` },
-    { expr: 'thinking', text: `Hmm.` },
-    { expr: 'thinking', text: `I was wondering when someone new would wander into these lands.` },
-    { expr: 'neutral', text: `You look a little… lost.` },
-    { expr: 'surprised', text: `Wait.` },
-    { expr: 'annoyed', text: `Don't tell me you came all the way out here without a guide.` },
-    { expr: 'smug', text: `Wow.` },
-    { expr: 'smug', text: `You're either incredibly brave…` },
-    { expr: 'smug', text: `or spectacularly dumb.` },
-    { expr: 'teasing', text: `These lands aren't exactly friendly to wandering adventurers.` },
-    { expr: 'teasing', text: `Every realm hides trials, puzzles, and knowledge tests.` },
-    { expr: 'thinking', text: `Physics valleys.` },
-    { expr: 'thinking', text: `Chemical forests.` },
-    { expr: 'thinking', text: `Mathematical ruins.` },
-    { expr: 'thinking', text: `Even experienced travelers lose their way here.` },
-    { expr: 'annoyed', text: `And you just walked in here alone?` },
-    { expr: 'awkward', text: `…Not that I care what happens to you.` },
-    { expr: 'embarrassed', text: `I mean—` },
-    { expr: 'embarrassed', text: `it's not like I'd feel responsible if you got completely stuck somewhere.` },
-    { expr: 'tsundere', text: `But if you do get stuck…` },
-    { expr: 'tsundere', text: `you'll just end up being a nuisance.` },
-    { expr: 'awkward', text: `So…` },
-    { expr: 'embarrassed', text: `I guess I could—` },
-    { expr: 'tsundere', text: `Ugh. This is going to sound weird.` },
-    { expr: 'tsundere', text: `I suppose I could let you have me as your guide.` },
-    { expr: 'teasing', text: `Don't misunderstand.` },
-    { expr: 'teasing', text: `I'm not doing it for you.` },
-    { expr: 'soft', text: `Someone has to keep you from getting hopelessly lost.` },
-    { expr: 'thinking', text: `Though…` },
-    { expr: 'thinking', text: `there is one small problem.` },
-    { expr: 'awkward', text: `You can't exactly keep calling me "Guide" forever.` },
-    { expr: 'embarrassed', text: `That would be… weird.` },
-    { expr: 'tsundere', text: `S-so if you're going to drag me around as your guide…` },
-    { expr: 'tsundere', text: `you should probably give me a proper name.` },
-    { expr: 'teasing', text: `Go on then.` },
-    { expr: 'teasing', text: `What are you going to call me?` }
+    { expr: 'happy', text: `Oh! A new adventurer approaches! Welcome, ${gameState.playerName || 'brave soul'}! 💫` },
+    { expr: 'neutral', text: `I've been waiting for someone curious and bold like you to find their way here~ ✨` },
+    { expr: 'happy', text: `I'll be your guide through this magical realm of learning. Together, we'll conquer knowledge quests! 🌟` },
+    { expr: 'neutralSad', text: `But first... every guide needs a name, don't you think? Something cute, perhaps? 😊` },
   ];
 
   let stepIdx = 0;
 
   function playStep() {
     if (stepIdx >= introSteps.length) {
-      document.getElementById('nameSection').querySelector('p').textContent = "Enter a name for your guide:";
       document.getElementById('nameSection').style.display = 'block';
+      document.getElementById('nameSection').style.animation = 'fadeSlideUp 0.6s var(--ease-bounce)';
       return;
     }
     const step = introSteps[stepIdx];
     setExpression(step.expr);
-    
-    typewriterVN(textEl, step.text, 25, () => {
+    typewriterVN(textEl, step.text, 30, () => {
       stepIdx++;
-      
-      const nextBtn = document.createElement('div');
-      nextBtn.className = 'dialogue-next-prompt';
-      nextBtn.innerHTML = '<span>▼</span>';
-      textEl.appendChild(nextBtn);
-
-      const nextHandler = (e) => {
-        e.stopPropagation();
-        document.removeEventListener('click', nextHandler);
-        playStep();
-      };
-
-      setTimeout(() => {
-        document.addEventListener('click', nextHandler, { once: true });
-        // Auto-next for very short sentences (less than 10 chars)
-        if (step.text.length < 10) {
-          setTimeout(() => { 
-            document.removeEventListener('click', nextHandler); 
-            if (stepIdx <= introSteps.length) playStep(); 
-          }, 1200);
-        }
-      }, 500);
+      setTimeout(playStep, 1000);
     });
   }
 
-  if (gameState.guideName) { playStep(); return; }
   setTimeout(playStep, 800);
 
   document.getElementById('confirmNameBtn').addEventListener('click', async () => {
-    const input = document.getElementById('guideNameInput');
-    const name = input.value.trim();
-    if (!name) { alert("Hey! I'm not that forgettable, am I? Give me a name!"); return; }
-    
+    const name = document.getElementById('guideNameInput').value.trim() || 'Luna';
     gameState.guideName = name;
-    await saveProfileUpdate(); 
-    document.getElementById('nameSection').style.display = 'none';
-
-    // Post-naming sequence exactly as prompt
-    const postNaming = [
-      { expr: 'curious', text: `Hmm… ${name}, huh?` },
-      { expr: 'soft', text: `…It's not bad.` },
-      { expr: 'tsundere', text: `Not that I particularly care what you picked.` },
-      { expr: 'determined', text: `Alright then, ${username}.` },
-      { expr: 'smug', text: `From now on…` },
-      { expr: 'smug', text: `I'll be your guide through the realms of knowledge.` },
-      { expr: 'smug', text: `Try not to slow me down.` }
-    ];
-
-    let pIdx = 0;
-    function playPost() {
-      if (pIdx >= postNaming.length) {
-        document.getElementById('continueBtn').classList.add('visible');
-        return;
-      }
-      const s = postNaming[pIdx];
-      setExpression(s.expr);
-      typewriterVN(textEl, s.text, 25, () => {
-        pIdx++;
-        
-        const nextBtn = document.createElement('div');
-        nextBtn.className = 'dialogue-next-prompt';
-        nextBtn.innerHTML = '<span>▼</span>';
-        textEl.appendChild(nextBtn);
-
-        const nextHandler = (e) => {
-          e.stopPropagation();
-          document.removeEventListener('click', nextHandler);
-          playPost();
-        };
-
-        setTimeout(() => {
-          document.addEventListener('click', nextHandler, { once: true });
-          // Auto-next for short messages
-          if (s.text.length < 15) {
-            setTimeout(() => {
-              document.removeEventListener('click', nextHandler);
-              if (pIdx <= postNaming.length) playPost();
-            }, 1500);
-          }
-        }, 500);
-      });
-    }
-    playPost();
+    await saveProfileUpdate();
+    setExpression('happy');
+    typewriterVN(textEl, `${name}... I love it! 💖 From now on, I'm ${name}, your loyal companion on this adventure!`, 25, () => {
+      document.getElementById('nameSection').style.display = 'none';
+      document.getElementById('continueBtn').classList.add('visible');
+    });
   });
 
   document.getElementById('continueBtn').addEventListener('click', () => {
@@ -844,7 +735,7 @@ export function renderSyllabusSelectionPage(container, data) {
     // Generate gamified modules with Gemini
     const result = await generateGamifiedSyllabus(text, sub.name);
     
-    if (result && result.levels) {
+    if (result && result.success) {
       gameState.generatedModules = result.levels;
       gameState.currentLevelIndex = 0;
       
@@ -858,8 +749,9 @@ export function renderSyllabusSelectionPage(container, data) {
         if (data.router) data.router.navigate('level-map', { router: data.router, particles: data.particles });
       }, 1000);
     } else {
-      console.error("Gemini failed to generate syllabus structure.");
-      alert("The arcane AI failed to forge your path. (Check if VITE_GEMINI_API_KEY is correctly set in your Vercel Dashboard or try again later.)");
+      const errorMsg = result ? result.error : "Unknown error";
+      console.error("Gemini failed to generate syllabus structure:", errorMsg);
+      alert(`The arcane AI failed to forge your path. \n\nReason: ${errorMsg}\n\n(Ensure VITE_GEMINI_API_KEY is correctly set in your Vercel Dashboard)`);
       document.getElementById('aiLoading').style.display = 'none';
     }
   }
