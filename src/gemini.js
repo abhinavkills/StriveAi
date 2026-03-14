@@ -130,3 +130,44 @@ export async function generateStudyNotes(topic) {
     return { success: false, error: error.message };
   }
 }
+
+export async function generateStudyPlan(topic) {
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+  const prompt = `
+    Create a 5-step strategic study plan for the topic: "${topic}".
+    The steps should be progressive and concise, suitable for a quest log.
+    Output ONLY moving a JSON array of strings.
+    Example: ["Understand core concepts", "Memorize key formulas", "Solve practice problems", "Take a mock test", "Review errors"]
+  `;
+
+  if (!apiKey) return { success: false, error: "API Key missing" };
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { 
+          response_mime_type: "application/json",
+          temperature: 0.7 
+        }
+      })
+    });
+
+    if (!response.ok) return { success: false, error: "AI Error" };
+
+    const data = await response.json();
+    let resultText = data.candidates[0].content.parts[0].text.replace(/```json/g, "").replace(/```/g, "").trim();
+    try {
+      const tasks = JSON.parse(resultText);
+      return { success: true, tasks };
+    } catch (e) {
+      return { success: false, error: "Failed to parse AI plan" };
+    }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
