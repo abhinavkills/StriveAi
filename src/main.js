@@ -26,7 +26,7 @@ router.register('subjects', (container, data) => renderSubjectsPage(container, {
 router.register('syllabus-selection', (container, data) => renderSyllabusSelectionPage(container, { ...data, router, particles }));
 router.register('level-map', (container, data) => renderLevelMapPage(container, { ...data, router, particles }));
 router.register('level-content', (container, data) => renderLevelContentPage(container, { ...data, router, particles }));
-router.register('adventure', (container, data) => renderAdventurePage(container, { ...data, router, particles }));
+router.register('adventure', (container, data) => renderLevelMapPage(container, { ...data, router, particles }));
 router.register('essentials', (container, data) => renderEssentialsPage(container, { ...data, router, particles }));
 
 // Start with the login page (no transition on first load)
