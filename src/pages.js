@@ -9,7 +9,9 @@ const gameState = {
   guideName: '',
   xp: 0,
   completedTiles: {},
-  currentSubject: null
+  currentSubject: null,
+  tasks: [],
+  notes: []
 };
 
 function getRank(xp) {
@@ -137,50 +139,90 @@ export function renderLoginPage(container, data) {
   container.innerHTML = `
     <div class="login-page">
       <div class="login-bg-particles"></div>
+      <div class="login-floating-runes">
+        <span class="float-rune fr1">ᚠ</span>
+        <span class="float-rune fr2">ᚷ</span>
+        <span class="float-rune fr3">ᛗ</span>
+        <span class="float-rune fr4">ᛈ</span>
+        <span class="float-rune fr5">ᛞ</span>
+        <span class="float-rune fr6">ᛟ</span>
+      </div>
       <div class="login-container">
         <div class="login-card-flipper" id="cardFlipper">
+          <!-- ===== LOGIN FRONT ===== -->
           <div class="login-card login-card-front">
-            <div class="login-emblem">
-              <canvas id="logoCanvasFront" class="login-logo-canvas"></canvas>
+            <div class="login-ornate-border"></div>
+            <div class="login-crest">
+              <canvas id="loginLogoFront" class="login-logo-canvas"></canvas>
+            </div>
+            <div class="login-title-block">
+              <p class="login-tagline">FORGE YOUR LEGACY</p>
             </div>
             <form class="login-form" id="loginForm">
               <div class="form-group">
-                <label>Adventurer Name</label>
-                <input type="text" id="loginName" placeholder="Enter your name, brave soul..." required autocomplete="off" />
+                <label>Username</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">👤</span>
+                  <input type="text" id="loginName" placeholder="Enter your name, brave soul..." required autocomplete="off" />
+                </div>
               </div>
               <div class="form-group">
-                <label>Secret Incantation</label>
-                <input type="password" id="loginPass" placeholder="Whisper your password..." required />
+                <label>Password</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">🔒</span>
+                  <input type="password" id="loginPass" placeholder="Whisper your password..." required />
+                </div>
               </div>
-              <button type="submit" class="login-btn" id="loginBtn">⚔️ Begin Your Quest ⚔️</button>
+              <button type="submit" class="login-btn" id="loginBtn">
+                <span class="btn-icon">⚔️</span> LOGIN
+              </button>
+              <p class="login-or-text">or create a new account</p>
             </form>
-            <div class="login-switch">
-              <span>New adventurer?</span>
-              <button class="switch-btn" id="showSignup">Create Account ✦</button>
+            <div class="login-bottom-bar">
+              <button class="bottom-action-btn" id="showSignup">CREATE ACCOUNT</button>
+              <div class="bottom-divider"></div>
+              <button class="bottom-action-btn" id="supportBtn">SUPPORT</button>
             </div>
           </div>
+          <!-- ===== SIGNUP BACK ===== -->
           <div class="login-card login-card-back">
-            <div class="login-emblem">
-              <canvas id="logoCanvasBack" class="login-logo-canvas"></canvas>
+            <div class="login-ornate-border"></div>
+            <div class="login-crest">
+              <canvas id="loginLogoBack" class="login-logo-canvas"></canvas>
+            </div>
+            <div class="login-title-block">
+              <p class="login-tagline">BEGIN YOUR ADVENTURE</p>
             </div>
             <form class="login-form" id="signupForm">
               <div class="form-group">
-                <label>Choose Your Name</label>
-                <input type="text" id="signupName" placeholder="Your adventurer name..." required autocomplete="off" />
+                <label>Adventurer Name</label>
+                <div class="input-wrapper">
+                  <span class="input-icon">👤</span>
+                  <input type="text" id="signupName" placeholder="Choose your name..." required autocomplete="off" />
+                </div>
               </div>
               <div class="form-group">
                 <label>Create Incantation</label>
-                <input type="password" id="signupPass" placeholder="Create your password..." required />
+                <div class="input-wrapper">
+                  <span class="input-icon">🔒</span>
+                  <input type="password" id="signupPass" placeholder="Create your password..." required />
+                </div>
               </div>
               <div class="form-group">
                 <label>Confirm Incantation</label>
-                <input type="password" id="signupConfirm" placeholder="Repeat your password..." required />
+                <div class="input-wrapper">
+                  <span class="input-icon">🔒</span>
+                  <input type="password" id="signupConfirm" placeholder="Repeat your password..." required />
+                </div>
               </div>
-              <button type="submit" class="login-btn">✦ Join the Academy ✦</button>
+              <button type="submit" class="login-btn">
+                <span class="btn-icon">✦</span> JOIN THE ACADEMY
+              </button>
             </form>
-            <div class="login-switch">
-              <span>Already enrolled?</span>
-              <button class="switch-btn" id="showLogin">Sign In ⚔️</button>
+            <div class="login-bottom-bar">
+              <button class="bottom-action-btn" id="showLogin">SIGN IN</button>
+              <div class="bottom-divider"></div>
+              <button class="bottom-action-btn">SUPPORT</button>
             </div>
           </div>
         </div>
@@ -188,9 +230,9 @@ export function renderLoginPage(container, data) {
     </div>
   `;
 
-  // Remove white background from logo canvases
-  removeWhiteBG('/assets/strive_logo.jpeg', 'logoCanvasFront', 600);
-  removeWhiteBG('/assets/strive_logo.jpeg', 'logoCanvasBack', 600);
+  // Render logo with background removed
+  removeWhiteBG('/assets/strive_logo.jpeg', 'loginLogoFront', 500);
+  removeWhiteBG('/assets/strive_logo.jpeg', 'loginLogoBack', 500);
 
   // Flip card
   const flipper = document.getElementById('cardFlipper');
@@ -656,14 +698,241 @@ function showXPReward(amount) {
 }
 
 // ==========================================
+// SCHOLAR'S LIBRARY TOOLS
+// ==========================================
+
+function openToolModal(title, contentHtml, data) {
+  const overlay = document.createElement('div');
+  overlay.className = 'quiz-overlay tool-overlay';
+  overlay.innerHTML = `
+    <div class="quiz-panel tool-panel" style="max-width: 800px; width: 90vw;">
+      <div class="quiz-header">
+        <h2>📜 ${title}</h2>
+        <button class="quiz-close-btn" id="toolClose">✕</button>
+      </div>
+      <div class="tool-content" style="padding: 24px;">
+        ${contentHtml}
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  overlay.querySelector('#toolClose').addEventListener('click', () => {
+    overlay.style.animation = 'fadeIn 0.3s reverse forwards';
+    setTimeout(() => overlay.remove(), 300);
+  });
+  
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.style.animation = 'fadeIn 0.3s reverse forwards';
+      setTimeout(() => overlay.remove(), 300);
+    }
+  });
+
+  return overlay;
+}
+
+function openStudyPlanner(data) {
+  const content = `
+    <div class="planner-tool">
+      <div class="tool-input-row" style="display:flex; gap:10px; margin-bottom:20px;">
+        <input type="text" id="taskInput" placeholder="Enter a new quest objective..." style="flex:1; padding:12px; background:rgba(245,230,200,0.05); border:1px solid var(--gold-dark); border-radius:8px; color:var(--parchment); font-family:var(--font-body);">
+        <button id="addTaskBtn" class="confirm-btn" style="padding:0 20px;">✦ Add</button>
+      </div>
+      <div id="taskList" class="task-list" style="max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
+        ${gameState.tasks.length === 0 ? '<p style="text-align:center; color:var(--text-secondary); padding:20px; font-style:italic;">No active quests in your planner...</p>' : ''}
+        ${gameState.tasks.map((t, i) => `
+          <div class="task-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(212,168,71,0.08); border:1px solid rgba(212,168,71,0.2); border-radius:8px;">
+            <span style="${t.done ? 'text-decoration:line-through; opacity:0.6;' : ''}">${t.text}</span>
+            <div style="display:flex; gap:8px;">
+               <button class="task-check" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:${t.done ? '#4caf50' : '#888'}">✓</button>
+               <button class="task-del" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#f44336">✕</button>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  
+  const modal = openToolModal('AI Study Planner', content, data);
+  
+  const refreshTasks = () => {
+    const list = modal.querySelector('#taskList');
+    list.innerHTML = gameState.tasks.length === 0 ? '<p style="text-align:center; color:var(--text-secondary); padding:20px; font-style:italic;">No active quests in your planner...</p>' : 
+      gameState.tasks.map((t, i) => `
+        <div class="task-item" style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:rgba(212,168,71,0.08); border:1px solid rgba(212,168,71,0.2); border-radius:8px;">
+          <span style="${t.done ? 'text-decoration:line-through; opacity:0.6;' : ''}">${t.text}</span>
+          <div style="display:flex; gap:8px;">
+             <button class="task-check" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:${t.done ? '#4caf50' : '#888'}">✓</button>
+             <button class="task-del" data-idx="${i}" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#f44336">✕</button>
+          </div>
+        </div>
+      `).join('');
+    
+    list.querySelectorAll('.task-check').forEach(btn => btn.addEventListener('click', () => {
+      gameState.tasks[btn.dataset.idx].done = !gameState.tasks[btn.dataset.idx].done;
+      refreshTasks();
+    }));
+    
+    list.querySelectorAll('.task-del').forEach(btn => btn.addEventListener('click', () => {
+      gameState.tasks.splice(btn.dataset.idx, 1);
+      refreshTasks();
+    }));
+  };
+
+  modal.querySelector('#addTaskBtn').addEventListener('click', () => {
+    const inp = modal.querySelector('#taskInput');
+    if (inp.value.trim()) {
+      gameState.tasks.push({ text: inp.value.trim(), done: false });
+      inp.value = '';
+      refreshTasks();
+    }
+  });
+
+  refreshTasks();
+}
+
+function openPracticeQuestions(data) {
+  const content = `
+    <div class="practice-tool">
+       <p style="margin-bottom:20px; color:var(--text-secondary);">Select a discipline to view sample scrolls of knowledge:</p>
+       <div class="practice-grid" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:12px;">
+         ${Object.keys(quizData).map(sub => `
+           <button class="practice-subject-btn" data-sub="${sub}" style="padding:15px; background:rgba(212,168,71,0.08); border:1px solid rgba(212,168,71,0.3); border-radius:8px; color:var(--gold); font-family:var(--font-heading); cursor:pointer; transition:all 0.3s; text-transform:uppercase; letter-spacing:1px;">
+             ${subjectConfig[sub].icon} ${subjectConfig[sub].name}
+           </button>
+         `).join('')}
+       </div>
+       <div id="practiceContent" style="margin-top:24px; max-height:300px; overflow-y:auto;"></div>
+    </div>
+  `;
+  
+  const modal = openToolModal('Practice Questions', content, data);
+  
+  modal.querySelectorAll('.practice-subject-btn').forEach(btn => btn.addEventListener('click', () => {
+    const sub = btn.dataset.sub;
+    const questions = quizData[sub];
+    modal.querySelector('#practiceContent').innerHTML = `
+      <h3 style="color:var(--gold); margin-bottom:15px; font-family:var(--font-heading); border-bottom:1px solid var(--gold-dark); padding-bottom:8px;">${subjectConfig[sub].name} Question Bank</h3>
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        ${questions.map((q, i) => `
+          <div style="background:rgba(245,230,200,0.03); padding:12px; border-radius:8px; border-left:3px solid var(--gold);">
+            <p style="font-family:var(--font-medieval); margin-bottom:8px;">Q${i+1}: ${q.q}</p>
+            <div style="font-size:0.85rem; color:var(--text-secondary);">Correct Answer: <span style="color:var(--gold)">${q.options[q.correct]}</span></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }));
+}
+
+function openNotesGenerator(data) {
+  const content = `
+    <div class="notes-tool">
+      <div class="tool-input-row" style="display:flex; gap:10px; margin-bottom:20px;">
+        <input type="text" id="noteInput" placeholder="Topic to summarize (e.g. Calculus, Atomic Theory)..." style="flex:1; padding:12px; background:rgba(245,230,200,0.05); border:1px solid var(--gold-dark); border-radius:8px; color:var(--parchment); font-family:var(--font-body);">
+        <button id="genNoteBtn" class="confirm-btn" style="padding:0 20px;">✦ Transcribe</button>
+      </div>
+      <div id="notesOutput" style="background:var(--bg-card); border:1px solid var(--gold-dark); border-radius:12px; min-height:200px; padding:24px; position:relative; overflow:hidden;">
+        <p id="notePlaceholder" style="text-align:center; color:var(--text-secondary); margin-top:60px; font-style:italic;">Thy knowledge will appear here after transcription...</p>
+        <div id="noteText" style="display:none; font-family:var(--font-medieval); line-height:1.7; color:var(--parchment);"></div>
+        <div id="noteLoading" style="display:none; text-align:center; margin-top:60px;">
+          <div class="writing-icon" style="font-size:3rem; animation:writing 1s infinite alternate">✍️</div>
+          <p style="color:var(--gold); margin-top:10px;">The Scholar is busy transcribing...</p>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  const modal = openToolModal('Notes Generator', content, data);
+  
+  modal.querySelector('#genNoteBtn').addEventListener('click', () => {
+    const topic = modal.querySelector('#noteInput').value.trim();
+    if (!topic) return;
+    
+    const placeholder = modal.querySelector('#notePlaceholder');
+    const loading = modal.querySelector('#noteLoading');
+    const output = modal.querySelector('#noteText');
+    
+    placeholder.style.display = 'none';
+    output.style.display = 'none';
+    loading.style.display = 'block';
+    
+    // Simulate AI generation with medieval flavor
+    setTimeout(() => {
+      loading.style.display = 'none';
+      output.style.display = 'block';
+      const fakeNotes = `
+        <h3 style="color:var(--gold); margin-bottom:12px; text-decoration:underline;">Scroll of ${topic}</h3>
+        <p>I. Basic Foundations of "${topic}" transcend the ordinary boundaries of understanding...</p>
+        <p>II. Key Principles to keep in your mind's eye: Always focus on the core essences of the subject matter.</p>
+        <p>III. Summary: Mastery requires patience and relentless pursuit of the truth within ${topic}.</p>
+        <p style="margin-top:15px; font-size:0.8rem; color:var(--gold-dark); text-align:right;">— Generated in the Arcane Academy Library</p>
+      `;
+      typewriterVN(output, fakeNotes, 20);
+    }, 2000);
+  });
+}
+
+function openProgressDashboard(data) {
+  const rank = getRank(gameState.xp);
+  const nextRankIdx = ranks.findIndex(r => r.name === rank.name) + 1;
+  const nextRank = ranks[nextRankIdx] || rank;
+  const progressToNext = nextRank === rank ? 100 : Math.floor(((gameState.xp - rank.xpRequired) / (nextRank.xpRequired - rank.xpRequired)) * 100);
+
+  const completedCount = Object.values(gameState.completedTiles).reduce((sum, set) => sum + (set.size || 0), 0);
+  
+  const content = `
+    <div class="dashboard-tool">
+       <div style="display:flex; align-items:center; gap:20px; margin-bottom:30px; background:rgba(212,168,71,0.05); padding:20px; border-radius:16px; border:1px solid rgba(212,168,71,0.2);">
+         <div style="font-size:4rem;">${rank.icon}</div>
+         <div>
+           <h3 style="font-family:var(--font-heading); font-size:1.8rem; color:var(--gold);">${rank.name}</h3>
+           <p style="color:var(--text-secondary); margin-bottom:10px;">Adventurer: <span style="color:var(--parchment)">${gameState.playerName || 'Brave Soul'}</span></p>
+           <div class="xp-bar-container" style="width:250px;"><div class="xp-bar-fill" style="width:${progressToNext}%"></div></div>
+           <p style="font-size:0.75rem; color:var(--gold-dark); margin-top:5px;">Next Rank: ${nextRank.name} (${gameState.xp} / ${nextRank.xpRequired} XP)</p>
+         </div>
+       </div>
+       <div class="stats-cards" style="display:grid; grid-template-columns: repeat(2, 1fr); gap:16px;">
+         <div style="padding:20px; background:rgba(26,20,37,0.8); border:1px solid rgba(212,168,71,0.1); border-radius:12px; text-align:center;">
+           <div style="font-size:0.8rem; color:var(--gold); letter-spacing:2px; margin-bottom:5px;">TOTAL EXPERIENCE</div>
+           <div style="font-size:2.2rem; font-family:var(--font-heading); color:var(--parchment);">${gameState.xp} ⚡</div>
+         </div>
+         <div style="padding:20px; background:rgba(26,20,37,0.8); border:1px solid rgba(212,168,71,0.1); border-radius:12px; text-align:center;">
+           <div style="font-size:0.8rem; color:var(--gold); letter-spacing:2px; margin-bottom:5px;">QUESTS CONQUERED</div>
+           <div style="font-size:2.2rem; font-family:var(--font-heading); color:var(--parchment);">${completedCount} ⚔️</div>
+         </div>
+       </div>
+       <div style="margin-top:24px;">
+         <h4 style="font-family:var(--font-heading); color:var(--gold); margin-bottom:10px; font-size:0.9rem;">DOMAIN PROFICIENCY</h4>
+         <div style="display:flex; flex-direction:column; gap:10px;">
+           ${Object.entries(subjectConfig).filter(([k]) => k !== 'essentials').map(([key, sub]) => {
+             const comp = gameState.completedTiles[key]?.size || 0;
+             return `
+               <div style="display:flex; align-items:center; gap:10px;">
+                 <span style="width:100px; font-size:0.8rem;">${sub.name}</span>
+                 <div class="xp-bar-container" style="flex:1;"><div class="xp-bar-fill" style="width:${(comp/5)*100}%; background:var(--arcane-cyan);"></div></div>
+                 <span style="font-size:0.75rem; color:var(--text-secondary); width:30px;">${comp}/5</span>
+               </div>
+             `;
+           }).join('')}
+         </div>
+       </div>
+    </div>
+  `;
+  
+  openToolModal('Progress Dashboard', content, data);
+}
+
+// ==========================================
 // 5. ESSENTIALS PAGE
 // ==========================================
 export function renderEssentialsPage(container, data) {
   const tools = [
-    { icon: '📋', name: 'AI Study Planner', desc: 'Organize your study schedule with intelligent planning tools and milestone tracking.' },
-    { icon: '❓', name: 'Practice Questions', desc: 'Access a vast library of practice problems across all subjects sorted by difficulty.' },
-    { icon: '📝', name: 'Notes Generator', desc: 'Create comprehensive study notes powered by AI, organized by topic and chapter.' },
-    { icon: '📊', name: 'Progress Dashboard', desc: 'Track your overall progress, XP history, completed quests, and rank advancement.' },
+    { id: 'planner', icon: '📋', name: 'AI Study Planner', desc: 'Organize your study schedule with intelligent planning tools and milestone tracking.' },
+    { id: 'practice', icon: '❓', name: 'Practice Questions', desc: 'Access a vast library of practice problems across all subjects sorted by difficulty.' },
+    { id: 'notes', icon: '📝', name: 'Notes Generator', desc: 'Create comprehensive study notes powered by AI, organized by topic and chapter.' },
+    { id: 'dashboard', icon: '📊', name: 'Progress Dashboard', desc: 'Track your overall progress, XP history, completed quests, and rank advancement.' },
   ];
 
   container.innerHTML = `
@@ -675,7 +944,7 @@ export function renderEssentialsPage(container, data) {
       </div>
       <div class="essentials-grid">
         ${tools.map(t => `
-          <div class="essential-card">
+          <div class="essential-card" data-tool="${t.id}">
             <span class="card-icon">${t.icon}</span>
             <h3>${t.name}</h3>
             <p>${t.desc}</p>
@@ -695,8 +964,16 @@ export function renderEssentialsPage(container, data) {
 
   container.querySelectorAll('.essential-card').forEach(card => {
     card.addEventListener('click', () => {
+      const toolId = card.dataset.tool;
       card.style.transform = 'scale(0.97)';
       setTimeout(() => { card.style.transform = ''; }, 200);
+      
+      setTimeout(() => {
+        if (toolId === 'planner') openStudyPlanner(data);
+        else if (toolId === 'practice') openPracticeQuestions(data);
+        else if (toolId === 'notes') openNotesGenerator(data);
+        else if (toolId === 'dashboard') openProgressDashboard(data);
+      }, 300);
     });
   });
 
@@ -704,3 +981,4 @@ export function renderEssentialsPage(container, data) {
     data.particles.start(20, { color: 'rgba(212, 168, 71, 0.35)', maxSize: 2, speed: 0.25 });
   }
 }
+
