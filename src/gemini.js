@@ -5,7 +5,7 @@
 
 export async function generateGamifiedSyllabus(syllabusText, subjectName) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const prompt = `
     Convert the following syllabus for the subject "${subjectName}" into a gamified study module. 
