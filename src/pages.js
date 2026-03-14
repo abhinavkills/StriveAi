@@ -3,7 +3,7 @@
 // ==========================================
 import { subjectConfig, quizData, ranks, defaultSyllabi } from './data.js';
 import { supabase } from './supabase.js';
-import { generateGamifiedSyllabus, generateStudyNotes } from './gemini.js';
+import { generateGamifiedSyllabus, generateStudyNotes, generateStudyPlan } from './gemini.js';
 
 // Game state
 export const gameState = {
@@ -14,9 +14,9 @@ export const gameState = {
   currentSubject: null,
   currentSyllabus: null,
   currentLevelIndex: 0,
-  generatedModules: null,
   tasks: [],
-  notes: []
+  notes: [],
+  lastActiveSubject: null
 };
 
 // --- Supabase Sync Functions ---
@@ -28,6 +28,7 @@ export async function loadUserStats() {
   if (profile) {
     gameState.xp = profile.xp || 0;
     gameState.guideName = profile.guide_name || '';
+    gameState.lastActiveSubject = profile.last_active_subject || null;
   }
 
   const { data: tasks } = await supabase.from('tasks').select('*').eq('user_id', user.id);
@@ -51,7 +52,8 @@ export async function saveProfileUpdate() {
   if (!user) return;
   await supabase.from('profiles').update({ 
     xp: gameState.xp, 
-    guide_name: gameState.guideName 
+    guide_name: gameState.guideName,
+    last_active_subject: gameState.lastActiveSubject
   }).eq('id', user.id);
 }
 
@@ -578,6 +580,16 @@ export function renderSubjectsPage(container, data) {
         <p class="subtitle medieval-text">CHOOSE YOUR PATH TO ELDRITCH MASTERY</p>
       </div>
 
+      <!-- ACTIVE QUEST STATUS -->
+      <div class="active-quest-panel">
+        <div class="active-quest-card">
+          <div class="quest-status-badge">CURRENT OBJECTIVE</div>
+          <div id="activeQuestContainer">
+             <p class="medieval-text" style="color:var(--text-secondary); opacity:0.7;">No active quest found in your logs.</p>
+          </div>
+        </div>
+      </div>
+
       <!-- CENTRALIZED CARDS AREA -->
       <div class="mastery-container">
         <div class="mastery-cards-grid">
@@ -609,6 +621,33 @@ export function renderSubjectsPage(container, data) {
     </div>
   `;
 
+  // Render Active Quest if it exists
+  const activeQuestContainer = document.getElementById('activeQuestContainer');
+  const lastTask = gameState.tasks.filter(t => !t.is_completed).pop();
+  const activeSub = gameState.currentSubject || gameState.lastActiveSubject;
+  
+  if (activeSub && activeSub !== 'essentials') {
+    activeQuestContainer.innerHTML = `
+      <div style="display:flex; align-items:center; gap:15px; padding: 5px;">
+        <span style="font-size:2rem;">${subjectConfig[activeSub].icon}</span>
+        <div>
+          <h4 class="medieval-bold" style="color:var(--gold); margin:0;">ACTIVE SUBJECT: ${subjectConfig[activeSub].name}</h4>
+          <p class="medieval-text" style="font-size:0.8rem; margin:2px 0 0;">Continue your quest to master this domain.</p>
+        </div>
+      </div>
+    `;
+  } else if (lastTask) {
+    activeQuestContainer.innerHTML = `
+      <div style="display:flex; align-items:center; gap:15px; padding: 5px;">
+        <span style="font-size:2rem;">📜</span>
+        <div>
+          <h4 class="medieval-bold" style="color:var(--gold); margin:0;">PLANNER GOAL: ${lastTask.title}</h4>
+          <p class="medieval-text" style="font-size:0.8rem; margin:2px 0 0;">Consult your Scholar's Planner to complete this quest.</p>
+        </div>
+      </div>
+    `;
+  }
+
   document.getElementById('logoutBtn')?.addEventListener('click', async () => {
     const { error } = await supabase.auth.signOut();
     if (error) console.error("Signout Error:", error);
@@ -621,6 +660,8 @@ export function renderSubjectsPage(container, data) {
       const subject = card.dataset.subject;
       const sub = subjectConfig[subject];
       gameState.currentSubject = subject;
+      gameState.lastActiveSubject = subject;
+      await saveProfileUpdate();
 
       // Visual feedback
       container.querySelectorAll('.discipline-card').forEach(s => {
@@ -1097,6 +1138,7 @@ function openStudyPlanner(data) {
       <div class="tool-input-row" style="display:flex; gap:10px; margin-bottom:20px;">
         <input type="text" id="taskInput" placeholder="Enter a new quest objective..." style="flex:1; padding:12px; background:rgba(245,230,200,0.05); border:1px solid var(--gold-dark); border-radius:8px; color:var(--parchment); font-family:var(--font-body);">
         <button id="addTaskBtn" class="confirm-btn" style="padding:0 20px;">✦ Add</button>
+        <button id="aiGenPlanBtn" class="confirm-btn" style="padding:0 20px; background:var(--arcane-cyan); border-color:var(--arcane-cyan);">🧙‍♂️ AI Forge</button>
       </div>
       <div id="taskList" class="task-list" style="max-height:350px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;">
       </div>
@@ -1142,6 +1184,34 @@ function openStudyPlanner(data) {
       inp.value = '';
       await addTaskDB(val);
       refreshTasks();
+    }
+  });
+
+  modal.querySelector('#aiGenPlanBtn').addEventListener('click', async () => {
+    const inp = modal.querySelector('#taskInput');
+    const topic = inp.value.trim();
+    if (!topic) {
+      alert("Please enter a topic for the AI to forge a plan!");
+      return;
+    }
+    
+    const btn = modal.querySelector('#aiGenPlanBtn');
+    const originalText = btn.textContent;
+    btn.textContent = "Forging...";
+    btn.disabled = true;
+    
+    const result = await generateStudyPlan(topic);
+    btn.textContent = originalText;
+    btn.disabled = false;
+    
+    if (result.success) {
+      for (const tTitle of result.tasks) {
+        await addTaskDB(tTitle);
+      }
+      inp.value = '';
+      refreshTasks();
+    } else {
+      alert("The Scholar failed to forge a plan: " + result.error);
     }
   });
 
@@ -1214,25 +1284,27 @@ function openNotesGenerator(data) {
     output.style.display = 'none';
     loading.style.display = 'block';
     
-    // Call the real Gemini AI for the Scholar's Library
-    (async () => {
-      try {
-        const result = await generateStudyNotes(topic);
-        loading.style.display = 'none';
-        output.style.display = 'block';
-        
-        if (result.success) {
-          typewriterVN(output, result.content, 20);
-          await addNoteDB(topic, result.content); // Save to Supabase
-        } else {
-          output.innerHTML = `<p style="color:#e74c3c; text-align:center; padding-top:40px;">The Scholar is unavailable: ${result.error}</p>`;
-        }
-      } catch (err) {
-        loading.style.display = 'none';
-        output.style.display = 'block';
-        output.innerHTML = `<p style="color:#e74c3c; text-align:center; padding-top:40px;">Arcane Connection Failed: ${err.message}</p>`;
-      }
-    })();
+    // Local Scholarly Transcription (No AI)
+    setTimeout(async () => {
+      const simulatedContent = `
+        <h3 style="color:var(--gold); text-decoration:underline;">Scroll of ${topic}</h3>
+        <p><strong>Section I: Foundations</strong><br>The study of ${topic} begins with the understanding of its core essence and the fundamental laws that govern it within the arcane realms. Every scholar must first grasp the internal logic before attempting to wield its power.</p>
+        <p style="margin-top:10px;"><strong>Section II: Core Essences</strong></p>
+        <ul style="margin-left:20px; list-style-type: '✧ ';">
+          <li>The prime resonance of ${topic} allows for strategic mastery over related disciplines.</li>
+          <li>Scholars have long debated the intricate patterns found within the layers of ${topic}.</li>
+          <li>Application of this knowledge requires focused intent and steady practice in the field.</li>
+        </ul>
+        <p style="margin-top:10px;"><strong>Section III: Scholarly Conclusion</strong><br>In summary, mastering ${topic} is a vital step for any adventurer seeking to transcend the boundaries of the known world and achieve true enlightenment.</p>
+        <p style="margin-top:15px; font-size:0.8rem; color:var(--gold-dark); text-align:right;">— Transcribed in the Arcane Academy Library</p>
+      `;
+      
+      loading.style.display = 'none';
+      output.style.display = 'block';
+      typewriterVN(output, simulatedContent, 20);
+      
+      await addNoteDB(topic, simulatedContent); // Save to Supabase
+    }, 1200);
   });
 }
 
