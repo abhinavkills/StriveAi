@@ -51,3 +51,27 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 });
 
+// ==========================================
+// Whimsical Music Player Logic
+// ==========================================
+const bgMusic = document.getElementById('bg-music');
+const musicToggleBtn = document.getElementById('music-toggle-btn');
+let isMusicPlaying = false;
+
+// Set friendly background volume level
+if (bgMusic) bgMusic.volume = 0.25;
+
+if (musicToggleBtn && bgMusic) {
+  musicToggleBtn.addEventListener('click', () => {
+    if (isMusicPlaying) {
+      bgMusic.pause();
+      musicToggleBtn.innerHTML = '🔇';
+      musicToggleBtn.classList.add('muted');
+    } else {
+      bgMusic.play();
+      musicToggleBtn.innerHTML = '🎵';
+      musicToggleBtn.classList.remove('muted');
+    }
+    isMusicPlaying = !isMusicPlaying;
+  });
+}
