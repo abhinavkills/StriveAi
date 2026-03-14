@@ -484,30 +484,41 @@ export function renderIntroPage(container, data) {
   }
 
   const username = gameState.playerName || 'adventurer';
-  const introSteps = [
-    { expr: 'happy', text: `Oh! A new adventurer approaches! Welcome, ${gameState.playerName || 'brave soul'}! 💫` },
-    { expr: 'neutral', text: `I've been waiting for someone curious and bold like you to find their way here~ ✨` },
-    { expr: 'happy', text: `I'll be your guide through this magical realm of learning. Together, we'll conquer knowledge quests! 🌟` },
-    { expr: 'neutralSad', text: `But first... every guide needs a name, don't you think? Something cute, perhaps? 😊` },
-  ];
-
-  let stepIdx = 0;
-
-  function playStep() {
-    if (stepIdx >= introSteps.length) {
-      document.getElementById('nameSection').style.display = 'block';
-      document.getElementById('nameSection').style.animation = 'fadeSlideUp 0.6s var(--ease-bounce)';
-      return;
-    }
-    const step = introSteps[stepIdx];
-    setExpression(step.expr);
-    typewriterVN(textEl, step.text, 30, () => {
-      stepIdx++;
-      setTimeout(playStep, 1000);
+  
+  // CHECK FOR RETURNING USER
+  if (gameState.guideName) {
+    setExpression('happy');
+    typewriterVN(textEl, `Welcome back, Master ${username}! ✨ I, ${gameState.guideName}, have been keeping your study scrolls safe. Ready to continue our quest?`, 30, () => {
+      const contBtn = document.getElementById('continueBtn');
+      contBtn.textContent = '⚔️ CONTINUE QUEST ⚔️';
+      contBtn.classList.add('visible');
     });
-  }
+  } else {
+    const introSteps = [
+      { expr: 'happy', text: `Oh! A new adventurer approaches! Welcome, ${username}! 💫` },
+      { expr: 'neutral', text: `I've been waiting for someone curious and bold like you to find their way here~ ✨` },
+      { expr: 'happy', text: `I'll be your guide through this magical realm of learning. Together, we'll conquer knowledge quests! 🌟` },
+      { expr: 'neutralSad', text: `But first... every guide needs a name, don't you think? Something cute, perhaps? 😊` },
+    ];
 
-  setTimeout(playStep, 800);
+    let stepIdx = 0;
+
+    function playStep() {
+      if (stepIdx >= introSteps.length) {
+        document.getElementById('nameSection').style.display = 'block';
+        document.getElementById('nameSection').style.animation = 'fadeSlideUp 0.6s var(--ease-bounce)';
+        return;
+      }
+      const step = introSteps[stepIdx];
+      setExpression(step.expr);
+      typewriterVN(textEl, step.text, 30, () => {
+        stepIdx++;
+        setTimeout(playStep, 1000);
+      });
+    }
+
+    setTimeout(playStep, 800);
+  }
 
   document.getElementById('confirmNameBtn').addEventListener('click', async () => {
     const name = document.getElementById('guideNameInput').value.trim() || 'Luna';
@@ -555,6 +566,7 @@ export function renderSubjectsPage(container, data) {
     <div class="subjects-page mastery-hall-layout">
       <!-- TOP BANNER GRAND SCROLL -->
       <div class="mastery-banner">
+        <button class="sign-out-btn" id="logoutBtn">✦ LOGOUT</button>
         <div class="banner-gold-rim"></div>
         <h1 class="medieval-bold">HALL OF ARCANE DISCIPLINES</h1>
         <p class="subtitle medieval-text">CHOOSE YOUR PATH TO ELDRITCH MASTERY</p>
@@ -590,6 +602,12 @@ export function renderSubjectsPage(container, data) {
       </div>
     </div>
   `;
+
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) console.error("Signout Error:", error);
+    location.reload();
+  });
 
   // Path card interactions
   container.querySelectorAll('.discipline-card').forEach(card => {
