@@ -514,68 +514,63 @@ export function renderSubjectsPage(container, data) {
   const essentials = subjectConfig.essentials;
 
   const cardsHtml = subjects.map(([key, sub], i) => `
-    <div class="path-card orbit-card" data-subject="${key}" style="animation-delay:${i * 0.12}s; --card-color:${sub.color}; --index:${i}">
-      <div class="path-card-glow"></div>
-      <div class="path-card-inner">
-        <div class="path-card-icon">${sub.icon}</div>
-        <div class="path-card-ring"></div>
+    <div class="academy-card" data-subject="${key}" style="animation-delay:${i * 0.1}s; --card-accent:${sub.color}">
+      <div class="academy-card-frame">
+        <div class="academy-card-art ${key}-art">
+          <div class="academy-card-icon">${sub.icon}</div>
+        </div>
       </div>
-      <div class="path-card-info">
-        <span class="path-card-name">${sub.name}</span>
-        <span class="path-card-role">${sub.role}</span>
+      <div class="academy-card-content">
+        <h3 class="academy-card-title">${sub.name.toUpperCase()}</h3>
+        <p class="academy-card-role">${sub.role}</p>
+        <button class="begin-path-btn">BEGIN PATH</button>
       </div>
     </div>
   `).join('');
 
   container.innerHTML = `
-    <div class="subjects-page artifact-select-page">
-      <div class="subjects-bg-overlay"></div>
-      <div class="subjects-header center-text">
-        <h1>Invoke Your Path</h1>
-        <p class="subtitle">Choose a domain to begin your mastery — orbiting the ancient halls of knowledge</p>
-      </div>
-
-      <div class="circular-layout-container">
-        <!-- Floating Centerpiece -->
-        <div class="path-card center-card" id="essShortcut" style="--card-color:${essentials.color}">
-          <div class="path-card-glow"></div>
-          <div class="path-card-inner">
-            <div class="path-card-icon">📜</div>
-            <div class="path-card-ring"></div>
-          </div>
-          <div class="path-card-info">
-            <span class="path-card-name">${essentials.name}</span>
-            <span class="path-card-role">${essentials.role}</span>
-          </div>
-        </div>
-
-        <!-- Rotating Orbiters -->
-        <div class="orbit-wrap" id="pathsGrid">
-          ${cardsHtml}
+    <div class="subjects-page academy-layout">
+      <!-- TOP BANNER scroll style -->
+      <div class="academy-top-banner">
+        <div class="banner-scroll-content">
+          AETHELGARD AI ACADEMY — Where Ancient Wisdom Meets Artificial Intelligence
         </div>
       </div>
 
-      <div class="guide-mini" id="guideMini">
-        <div class="guide-mini-bubble">${randomFrom([
-          `Select your discipline, ${gameState.playerName || 'adventurer'}! Each path holds ancient power~ ✨`,
-          `Which domain calls to you? 🔮`,
-          `Touch a card to invoke its power!`,
-        ])}</div>
-        <img src="/assets/expr_neutral_happy.jpeg" class="guide-mini-img" style="object-position:0% center" alt="Guide" />
+      <!-- MAIN PAGE WRAPPER -->
+      <div class="academy-main-wrap">
+        <!-- SIDEBAR -->
+        <aside class="academy-sidebar">
+          <button class="sidebar-btn active"><span>🏠</span> HOME</button>
+          <button class="sidebar-btn" id="companionTrigger"><span>🦉</span> MY COMPANION</button>
+          <button class="sidebar-btn" id="essShortcutSide"><span>📜</span> LIBRARY OF SCROLLS</button>
+          <button class="sidebar-btn"><span>⚔️</span> QUESTS</button>
+        </aside>
+
+        <!-- CONTENT AREA -->
+        <main class="academy-content">
+          <div class="academy-header-main">
+            <h1>INVOKE YOUR PATH: Choose Your Discipline</h1>
+            <div class="header-line"></div>
+          </div>
+          
+          <div class="academy-cards-grid">
+            ${cardsHtml}
+          </div>
+        </main>
       </div>
 
-      <div class="subject-intro-overlay" id="subjectIntro" style="display:none">
-        <div class="subject-intro-panel">
-          <div class="guide-intro-char">
-            <img src="/assets/expr_neutral_happy.jpeg" class="guide-intro-img" id="introGuideImg" style="object-position:0% center" alt="Guide" />
-          </div>
-          <div class="subject-intro-text">
-            <h2 id="introSubjectTitle"></h2>
-            <p id="introSubjectDesc"></p>
-          </div>
+      <!-- COMPANION WIDGET (Bottom Right) -->
+      <div class="academy-companion-widget">
+        <div class="companion-bubble">
+          <p>Elara is ready to assist you!</p>
+        </div>
+        <div class="companion-avatar-wrap">
+          <img src="/assets/guide_character.png" alt="Companion" class="companion-avatar-img">
         </div>
       </div>
 
+      <!-- TRANSITION OVERLAY -->
       <div class="sword-tear-overlay" id="swordTear" style="display:none">
         <div class="tear-left"></div>
         <div class="tear-right"></div>
@@ -588,25 +583,25 @@ export function renderSubjectsPage(container, data) {
     </div>
   `;
 
-  // Essentials shortcut
-  document.getElementById('essShortcut').addEventListener('click', () => {
+  // Interaction: Library of Scrolls shortcut
+  document.getElementById('essShortcutSide').addEventListener('click', () => {
     if (data.router) data.router.navigate('essentials', { router: data.router, particles: data.particles });
   });
 
   // Path card interactions
-  container.querySelectorAll('.path-card').forEach(card => {
+  container.querySelectorAll('.academy-card').forEach(card => {
     card.addEventListener('click', () => {
       const subject = card.dataset.subject;
       const sub = subjectConfig[subject];
       gameState.currentSubject = subject;
 
-      // Fade other cards
-      container.querySelectorAll('.path-card').forEach(s => {
+      // Visual feedback
+      container.querySelectorAll('.academy-card').forEach(s => {
         if (s !== card) s.classList.add('fading');
       });
-      card.classList.add('invoking');
+      card.classList.add('invoking-academy');
 
-      // Show tear effect
+      // Show tear effect and transition
       setTimeout(() => {
         const tear = document.getElementById('swordTear');
         document.getElementById('tearIcon').textContent = sub.icon;
@@ -616,18 +611,15 @@ export function renderSubjectsPage(container, data) {
 
         setTimeout(() => { tear.classList.add('active'); }, 50);
 
-        // After tear reveal - show subject intro
         setTimeout(() => {
-          tear.style.display = 'none';
-          tear.classList.remove('active');
-          showSubjectIntro(subject, sub, data);
+          if (data.router) data.router.navigate('adventure', { router: data.router, particles: data.particles });
         }, 1800);
-      }, 1000);
+      }, 600);
     });
   });
 
   if (data.particles) {
-    data.particles.start(25, { color: 'rgba(212, 168, 71, 0.35)', maxSize: 2.5, speed: 0.3 });
+    data.particles.start(30, { color: 'rgba(212, 168, 71, 0.25)', maxSize: 2, speed: 0.2 });
   }
 }
 
@@ -640,11 +632,11 @@ function showSubjectIntro(subject, sub, data) {
   overlay.style.display = 'flex';
 
   const introTexts = {
-    math: "Mathematics is the art of strategic problem solving. Numbers and formulas are your weapons here!",
-    chemistry: "Welcome to the realm of alchemy! Understanding matter and reactions is the key to power~",
-    physics: "The laws of the universe await you! Master force, energy, and motion to become an Arcane Engineer!",
-    programming: "Logic and creation through code... The Cyber Mage's path is both challenging and rewarding!",
-    biology: "Life and natural systems are filled with wonder. A Druid must understand all living things~",
+    math: "Sacred Mathematics is the art of strategic problem solving. Numbers and runes are your weapons here!",
+    chemistry: "Welcome to the realm of alchemy! Understanding matter and transformation is the key to elemental power~",
+    physics: "The celestial laws of the cosmos await you! Master force, energy, and motion to become an Arcane Mage!",
+    coding: "Logic and creation through arcane code... The path of the Allenturos is both challenging and rewarding!",
+    biology: "Life and organic systems are filled with wonder. A scholar must understand the helix of life itself~",
   };
 
   const e = expressions.happy;

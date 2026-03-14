@@ -41,50 +41,50 @@ export const quizData = {
 
 export const subjectConfig = {
   math: {
-    name: "Mathematics",
-    role: "Knight Strategist",
-    icon: "⚔️",
-    desc: "Master the art of logical reasoning and strategic problem solving through numbers and formulas.",
+    name: "Sacred Mathematics",
+    role: "Master the runes of logic and the forces that shape reality.",
+    icon: "🖋️",
+    desc: "Sacred geometry and numerical truth.",
     cssClass: "math",
-    color: "#4682e6"
+    color: "#c9a44c"
   },
   chemistry: {
-    name: "Chemistry",
-    role: "Alchemist Wizard",
+    name: "Alchemical Chemistry",
+    role: "Master the laws of transformation and elemental essence.",
     icon: "🧪",
-    desc: "Transmute your understanding of matter, elements, and the arcane science of molecular bonds.",
+    desc: "Transmute matter and potion brewing.",
     cssClass: "chemistry",
-    color: "#9c27b0"
+    color: "#a352ff"
   },
   physics: {
-    name: "Physics",
-    role: "Arcane Engineer",
-    icon: "⚡",
-    desc: "Harness the fundamental forces of nature and understand the mechanics of the universe.",
+    name: "Celestial Physics",
+    role: "Master the laws of the cosmos and the stars above.",
+    icon: "♈",
+    desc: "Astrology meets fundamental physics.",
     cssClass: "physics",
-    color: "#00bcd4"
+    color: "#4682e6"
   },
-  programming: {
-    name: "Programming",
-    role: "Cyber Mage",
+  coding: {
+    name: "Arcane Coding",
+    role: "Master the laws of the allenturos and binary spells.",
     icon: "💻",
-    desc: "Weave spells of code and logic to command the digital realm with absolute precision.",
-    cssClass: "programming",
-    color: "#39ff14"
+    desc: "Digital spells and scrolling logic.",
+    cssClass: "coding", 
+    color: "#00d4ff"
   },
   biology: {
-    name: "Biology",
-    role: "Nature Druid",
+    name: "Natural Biology",
+    role: "Master the laws of nature and the organic DNA helix.",
     icon: "🌿",
-    desc: "Commune with the living world and unravel the mysteries of life itself.",
+    desc: "Life forces and natural growth.",
     cssClass: "biology",
     color: "#4caf50"
   },
   essentials: {
-    name: "Essentials",
-    role: "Scholar Guild",
+    name: "Scholar Guild",
+    role: "Access traditional study tools and planners.",
     icon: "📜",
-    desc: "Access traditional study tools, notes, planners, and practice resources in the Scholar's Library.",
+    desc: "The library of scrolls.",
     cssClass: "essentials",
     color: "#d4a847"
   }
