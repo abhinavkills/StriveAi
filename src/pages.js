@@ -89,6 +89,23 @@ export async function saveProgressDB(subjectId, tileIndex) {
     tile_index: tileIndex 
   });
 }
+
+export async function saveSyllabusDB(subjectId, syllabusJson) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+  await supabase.from('syllabi').upsert({
+    user_id: user.id,
+    subject_id: subjectId,
+    content: syllabusJson
+  });
+}
+
+export async function loadSyllabusDB(subjectId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from('syllabi').select('content').eq('user_id', user.id).eq('subject_id', subjectId).single();
+  return data ? data.content : null;
+}
 // --- End Sync Functions ---
 
 function getRank(xp) {
@@ -721,10 +738,19 @@ export function renderSubjectsPage(container, data) {
         };
 
         const briefEl = document.getElementById('tearBrief');
-        typewriterVN(briefEl, briefs[subject] || "A fine choice, adventurer. Your path awaits!", 35, () => {
-          setTimeout(() => {
-            if (data.router) data.router.navigate(nextPath, { router: data.router, particles: data.particles });
-          }, 1500);
+        typewriterVN(briefEl, briefs[subject] || "A fine choice, adventurer. Your path awaits!", 35, async () => {
+          // Check if we already have a generated syllabus for this subject
+          const existing = await loadSyllabusDB(subject);
+          if (existing) {
+            gameState.generatedModules = existing;
+            setTimeout(() => {
+                if (data.router) data.router.navigate('level-map', { router: data.router, particles: data.particles });
+            }, 1000);
+          } else {
+            setTimeout(() => {
+                if (data.router) data.router.navigate(nextPath, { router: data.router, particles: data.particles });
+            }, 1500);
+          }
         });
       }, 600);
     });
@@ -821,6 +847,9 @@ export function renderSyllabusSelectionPage(container, data) {
     if (result && result.levels) {
       gameState.generatedModules = result.levels;
       gameState.currentLevelIndex = 0;
+      
+      // Save to DB
+      await saveSyllabusDB(gameState.currentSubject, result.levels);
       
       // Save initial progress for this subject if not exists
       await saveProgressDB(gameState.currentSubject, 0); 
