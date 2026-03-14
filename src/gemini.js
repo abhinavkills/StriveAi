@@ -51,7 +51,7 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          response_mime_type: "application/json",
+          responseMimeType: "application/json",
           temperature: 0.7
         }
       })
