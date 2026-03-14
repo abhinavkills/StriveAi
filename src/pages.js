@@ -657,7 +657,7 @@ export function renderSubjectsPage(container, data) {
 
   // Path card interactions
   container.querySelectorAll('.discipline-card').forEach(card => {
-    card.addEventListener('click', () => {
+    card.addEventListener('click', async () => {
       const subject = card.dataset.subject;
       const sub = subjectConfig[subject];
       gameState.currentSubject = subject;
