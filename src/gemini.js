@@ -41,7 +41,7 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
 
   if (!apiKey) {
     console.error("FORGE ERROR: VITE_GEMINI_API_KEY is missing in your environment!");
-    return null;
+    return { success: false, error: "API Key missing (Check Vercel Dashboard)" };
   }
 
   try {
