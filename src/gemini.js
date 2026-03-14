@@ -5,7 +5,7 @@
 
 export async function generateGamifiedSyllabus(syllabusText, subjectName) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const prompt = `
     Convert the following syllabus for the subject "${subjectName}" into a gamified study module. 
@@ -51,7 +51,7 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
-          responseMimeType: "application/json",
+          response_mime_type: "application/json",
           temperature: 0.7
         }
       })
@@ -91,7 +91,7 @@ export async function generateGamifiedSyllabus(syllabusText, subjectName) {
 
 export async function generateStudyNotes(topic) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const prompt = `
     You are an ancient scholar in a magical library. Provide a detailed study summary for the topic: "${topic}".
@@ -114,7 +114,10 @@ export async function generateStudyNotes(topic) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.7 }
+        generationConfig: { 
+          response_mime_type: "text/plain",
+          temperature: 0.7 
+        }
       })
     });
 
