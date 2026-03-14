@@ -11,7 +11,9 @@ import {
   renderLoginPage,
   renderIntroPage,
   renderSubjectsPage,
-  renderAdventurePage,
+  renderSyllabusSelectionPage,
+  renderLevelMapPage,
+  renderLevelContentPage,
   renderEssentialsPage
 } from './pages.js';
 
