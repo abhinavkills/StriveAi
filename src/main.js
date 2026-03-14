@@ -14,7 +14,9 @@ import {
   renderSyllabusSelectionPage,
   renderLevelMapPage,
   renderLevelContentPage,
-  renderEssentialsPage
+  renderEssentialsPage,
+  gameState,
+  loadUserStats
 } from './pages.js';
 
 // Initialize systems
@@ -40,11 +42,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   
   if (session) {
     // If logged in, skip to intro
-    import('./pages.js').then(async ({ gameState, loadUserStats }) => {
-      gameState.playerName = session.user.user_metadata.full_name || 'Brave Soul';
-      await loadUserStats(); // Load data from Supabase
-      router.navigate('intro', { router, particles });
-    });
+    gameState.playerName = session.user.user_metadata.full_name || 'Brave Soul';
+    await loadUserStats(); // Load data from Supabase
+    router.navigate('intro', { router, particles });
   } else {
     renderLoginPage(container, { router, particles });
     router.currentRoute = 'login';
