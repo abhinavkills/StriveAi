@@ -2,6 +2,7 @@
 // Page Renderers - All page UI generation
 // ==========================================
 import { subjectConfig, quizData, ranks, defaultSyllabi } from './data.js';
+import { recommendedQuestsData } from './recommendedData.js';
 import { supabase } from './supabase.js';
 import { generateGamifiedSyllabus, generateStudyNotes, generateStudyPlan } from './gemini.js';
 
@@ -742,8 +743,8 @@ export function renderSyllabusSelectionPage(container, data) {
         <!-- RECOMMENDED OPTION -->
         <div class="syllabus-card quest-card" id="recommendedSyllabusBtn">
           <div class="syllabus-card-icon">📖</div>
-          <h2 class="medieval-bold">Recommended Quests</h2>
-          <p class="medieval-text">Face the master's handpicked challenges for a stable path.</p>
+          <h2 class="medieval-bold">Recommended Questions</h2>
+          <p class="medieval-text">Intermediate trials handpicked by the Grand Vizier for mastery.</p>
           <div class="syllabus-card-btn">FACE TRIALS</div>
         </div>
 
@@ -788,30 +789,26 @@ export function renderSyllabusSelectionPage(container, data) {
   });
 
   document.getElementById('recommendedSyllabusBtn')?.addEventListener('click', async () => {
-    const questions = quizData[gameState.currentSubject] || [];
-    if (questions.length === 0) {
-      alert("No recommended quests found for this discipline!");
+    const questionsSet = recommendedQuestsData[gameState.currentSubject] || [];
+    if (questionsSet.length === 0) {
+      alert("No recommended questions found for this discipline yet!");
       return;
     }
 
-    // Build 5 levels from the hardcoded questions
-    const levels = questions.slice(0, 5).map((q, i) => ({
-      title: `Divine Trial: ${sub.name} #${i + 1}`,
-      explanation: `Welcome to the level ${i + 1} of the ${sub.name} discipline. This quest utilizes the Academy's traditional knowledge bank to test your foundational skills. Master these runes before attempting more complex enchantments.`,
-      summary: `You have successfully completed the ${i + 1}th challenge of ${sub.name}.`,
-      examples: ["Consult the ancient scrolls", "Practice the fundamental runes"],
-      questions: [
-        { q: q.q, options: q.options, correct: q.correct },
-        { q: "Is the path of knowledge endless?", options: ["Yes", "No", "Perhaps", "Only for some"], correct: 0 },
-        { q: "Does the Scholar guide you well?", options: ["Absolutely", "Indeed", "Truly", "All of the above"], correct: 3 }
-      ],
-      challenge: "The more of them there are, the less you see. What are they? (Shadows)"
+    // Map our hardcoded intermediate questions into the module format
+    const levels = questionsSet.map((lvl, i) => ({
+      title: lvl.title,
+      explanation: lvl.explanation,
+      summary: lvl.summary,
+      examples: ["Consult the royal archives", "Practice the ancient glyphs"],
+      questions: lvl.questions,
+      challenge: "Which rune is forged in fire but quenched in ice? (Obsidian)" // Flavor riddle
     }));
 
     gameState.generatedModules = levels;
     gameState.currentLevelIndex = 0;
     
-    // Save to DB
+    // Save to DB for persistence
     await saveSyllabusDB(gameState.currentSubject, levels);
     await saveProgressDB(gameState.currentSubject, 0); 
 
