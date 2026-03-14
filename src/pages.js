@@ -443,6 +443,7 @@ export function renderLoginPage(container, data) {
 export function renderIntroPage(container, data) {
   container.innerHTML = `
     <div class="intro-page">
+      <button class="sign-out-btn" id="logoutBtn">✦ LOGOUT</button>
       <div class="intro-content">
         <div class="guide-character-wrapper">
           <div class="guide-character-container" id="guideContainer">
@@ -529,6 +530,11 @@ export function renderIntroPage(container, data) {
       document.getElementById('nameSection').style.display = 'none';
       document.getElementById('continueBtn').classList.add('visible');
     });
+  });
+
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    location.reload();
   });
 
   document.getElementById('continueBtn').addEventListener('click', () => {
@@ -840,6 +846,7 @@ export function renderLevelMapPage(container, data) {
   container.innerHTML = `
     <div class="map-page mastery-hall-layout">
        <div class="mastery-banner">
+        <button class="sign-out-btn" id="logoutBtn">✦ LOGOUT</button>
         <div class="banner-gold-rim"></div>
         <h1 class="medieval-bold">${sub.name.toUpperCase()} REALM</h1>
         <p class="subtitle medieval-text">ASCEND THROUGH THE DIVINE STAGES OF MASTERY</p>
@@ -883,6 +890,11 @@ export function renderLevelMapPage(container, data) {
       gameState.currentLevelIndex = idx;
       if (data.router) data.router.navigate('level-content', { router: data.router, particles: data.particles });
     });
+  });
+
+  document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    location.reload();
   });
 
   document.getElementById('backToHall').addEventListener('click', () => {
