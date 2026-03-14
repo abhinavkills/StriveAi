@@ -510,63 +510,47 @@ export function renderIntroPage(container, data) {
 // 3. SUBJECT SELECTION PAGE - ARTIFACT INVOKING
 // ==========================================
 export function renderSubjectsPage(container, data) {
-  const subjects = Object.entries(subjectConfig).filter(([key]) => key !== 'essentials');
-  const essentials = subjectConfig.essentials;
+  // Get all subjects including essentials for a unified choice page
+  const subjects = Object.entries(subjectConfig);
 
   const cardsHtml = subjects.map(([key, sub], i) => `
-    <div class="academy-card" data-subject="${key}" style="animation-delay:${i * 0.1}s; --card-accent:${sub.color}">
+    <div class="academy-card discipline-card" data-subject="${key}" style="animation-delay:${i * 0.1}s; --card-accent:${sub.color}">
       <div class="academy-card-frame">
-        <div class="academy-card-art ${key}-art">
-          <div class="academy-card-icon">${sub.icon}</div>
+        <div class="academy-card-art" style="background-image: url('${sub.cardArt}')">
+          <div class="card-overlay-glow"></div>
         </div>
       </div>
       <div class="academy-card-content">
-        <h3 class="academy-card-title">${sub.name.toUpperCase()}</h3>
-        <p class="academy-card-role">${sub.role}</p>
-        <button class="begin-path-btn">BEGIN PATH</button>
+        <h3 class="academy-card-title medieval-bold">${sub.name.toUpperCase()}</h3>
+        <p class="academy-card-role medieval-text">${sub.role}</p>
+        <button class="begin-path-btn medieval-bold">INVOKE POWER</button>
       </div>
     </div>
   `).join('');
 
   container.innerHTML = `
-    <div class="subjects-page academy-layout">
-      <!-- TOP BANNER scroll style -->
-      <div class="academy-top-banner">
-        <div class="banner-scroll-content">
-          AETHELGARD AI ACADEMY — Where Ancient Wisdom Meets Artificial Intelligence
+    <div class="subjects-page mastery-hall-layout">
+      <!-- TOP BANNER GRAND SCROLL -->
+      <div class="mastery-banner">
+        <div class="banner-gold-rim"></div>
+        <h1 class="medieval-bold">HALL OF ARCANE DISCIPLINES</h1>
+        <p class="subtitle medieval-text">CHOOSE YOUR PATH TO ELDRITCH MASTERY</p>
+      </div>
+
+      <!-- CENTRALIZED CARDS AREA -->
+      <div class="mastery-container">
+        <div class="mastery-cards-grid">
+          ${cardsHtml}
         </div>
       </div>
 
-      <!-- MAIN PAGE WRAPPER -->
-      <div class="academy-main-wrap">
-        <!-- SIDEBAR -->
-        <aside class="academy-sidebar">
-          <button class="sidebar-btn active"><span>🏠</span> HOME</button>
-          <button class="sidebar-btn" id="companionTrigger"><span>🦉</span> MY COMPANION</button>
-          <button class="sidebar-btn" id="essShortcutSide"><span>📜</span> LIBRARY OF SCROLLS</button>
-          <button class="sidebar-btn"><span>⚔️</span> QUESTS</button>
-        </aside>
-
-        <!-- CONTENT AREA -->
-        <main class="academy-content">
-          <div class="academy-header-main">
-            <h1>INVOKE YOUR PATH: Choose Your Discipline</h1>
-            <div class="header-line"></div>
-          </div>
-          
-          <div class="academy-cards-grid">
-            ${cardsHtml}
-          </div>
-        </main>
-      </div>
-
-      <!-- COMPANION WIDGET (Bottom Right) -->
-      <div class="academy-companion-widget">
-        <div class="companion-bubble">
-          <p>Elara is ready to assist you!</p>
+      <!-- COMPANION WIDGET (Minimalized) -->
+      <div class="mastery-companion">
+        <div class="comp-bubble">
+          <p class="medieval-text">The stars align, seeker. Which path calls to your spirit?</p>
         </div>
-        <div class="companion-avatar-wrap">
-          <img src="/assets/guide_character.png" alt="Companion" class="companion-avatar-img">
+        <div class="comp-avatar">
+          <img src="/assets/expr_neutral_happy.jpeg" alt="Guide">
         </div>
       </div>
 
@@ -576,32 +560,29 @@ export function renderSubjectsPage(container, data) {
         <div class="tear-right"></div>
         <div class="tear-reveal" id="tearReveal">
           <div class="tear-icon" id="tearIcon"></div>
-          <h1 id="tearSubjectName"></h1>
-          <p class="tear-role" id="tearRole"></p>
+          <h1 id="tearSubjectName" class="medieval-bold"></h1>
+          <p class="tear-role medieval-text" id="tearRole"></p>
         </div>
       </div>
     </div>
   `;
 
-  // Interaction: Library of Scrolls shortcut
-  document.getElementById('essShortcutSide').addEventListener('click', () => {
-    if (data.router) data.router.navigate('essentials', { router: data.router, particles: data.particles });
-  });
-
   // Path card interactions
-  container.querySelectorAll('.academy-card').forEach(card => {
+  container.querySelectorAll('.discipline-card').forEach(card => {
     card.addEventListener('click', () => {
       const subject = card.dataset.subject;
       const sub = subjectConfig[subject];
       gameState.currentSubject = subject;
 
       // Visual feedback
-      container.querySelectorAll('.academy-card').forEach(s => {
+      container.querySelectorAll('.discipline-card').forEach(s => {
         if (s !== card) s.classList.add('fading');
       });
-      card.classList.add('invoking-academy');
+      card.classList.add('invoking-mastery');
 
-      // Show tear effect and transition
+      // Special case for essentials
+      const nextPath = (subject === 'essentials') ? 'essentials' : 'adventure';
+
       setTimeout(() => {
         const tear = document.getElementById('swordTear');
         document.getElementById('tearIcon').textContent = sub.icon;
@@ -612,14 +593,14 @@ export function renderSubjectsPage(container, data) {
         setTimeout(() => { tear.classList.add('active'); }, 50);
 
         setTimeout(() => {
-          if (data.router) data.router.navigate('adventure', { router: data.router, particles: data.particles });
+          if (data.router) data.router.navigate(nextPath, { router: data.router, particles: data.particles });
         }, 1800);
       }, 600);
     });
   });
 
   if (data.particles) {
-    data.particles.start(30, { color: 'rgba(212, 168, 71, 0.25)', maxSize: 2, speed: 0.2 });
+    data.particles.start(35, { color: 'rgba(212, 168, 71, 0.4)', maxSize: 3, speed: 0.2 });
   }
 }
 

@@ -23,7 +23,7 @@ export const quizData = {
     { q: "What type of energy is stored in a spring?", options: ["Kinetic", "Thermal", "Potential", "Nuclear"], correct: 2 },
     { q: "What is the unit of electric resistance?", options: ["Ampere", "Volt", "Ohm", "Coulomb"], correct: 2 },
   ],
-  programming: [
+  coding: [
     { q: "What does HTML stand for?", options: ["HyperText Markup Language", "High Tech Modern Language", "Home Tool Markup Language", "Hyper Transfer Markup Language"], correct: 0 },
     { q: "Which symbol is used for comments in Python?", options: ["//", "/*", "#", "--"], correct: 2 },
     { q: "What is the time complexity of binary search?", options: ["O(n)", "O(n²)", "O(log n)", "O(1)"], correct: 2 },
@@ -42,48 +42,54 @@ export const quizData = {
 export const subjectConfig = {
   math: {
     name: "Sacred Mathematics",
-    role: "Master the runes of logic and the forces that shape reality.",
+    role: "Master the runes of logic and numerical reality.",
     icon: "🖋️",
+    cardArt: "/assets/math_card_art.png",
     desc: "Sacred geometry and numerical truth.",
     cssClass: "math",
     color: "#c9a44c"
   },
   chemistry: {
     name: "Alchemical Chemistry",
-    role: "Master the laws of transformation and elemental essence.",
+    role: "Master the laws of transformation and essence.",
     icon: "🧪",
+    cardArt: "/assets/chemistry_card_art.png",
     desc: "Transmute matter and potion brewing.",
     cssClass: "chemistry",
     color: "#a352ff"
   },
   physics: {
     name: "Celestial Physics",
-    role: "Master the laws of the cosmos and the stars above.",
+    role: "Master the laws of the cosmos and the stars.",
     icon: "♈",
+    cardArt: "/assets/physics_card_art.png",
     desc: "Astrology meets fundamental physics.",
     cssClass: "physics",
     color: "#4682e6"
   },
   coding: {
     name: "Arcane Coding",
-    role: "Master the laws of the allenturos and binary spells.",
+    role: "Master the allenturos and binary spells.",
     icon: "💻",
+    cardArt: "/assets/coding_card_art.png",
     desc: "Digital spells and scrolling logic.",
     cssClass: "coding", 
     color: "#00d4ff"
   },
   biology: {
     name: "Natural Biology",
-    role: "Master the laws of nature and the organic DNA helix.",
+    role: "Master the laws of nature and the organic helix.",
     icon: "🌿",
+    cardArt: "/assets/biology_card_art.png",
     desc: "Life forces and natural growth.",
     cssClass: "biology",
     color: "#4caf50"
   },
   essentials: {
     name: "Scholar Guild",
-    role: "Access traditional study tools and planners.",
+    role: "Access traditional study tools and ancient planners.",
     icon: "📜",
+    cardArt: "/assets/parchment_bg.png",
     desc: "The library of scrolls.",
     cssClass: "essentials",
     color: "#d4a847"
